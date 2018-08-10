@@ -38,13 +38,14 @@ def find_coverage(df,chromosome,clinvar_position,design,fn):
 		design.cov = 1
 		design.cov_num += 1
 
-def find_match(gene, df_clinvar,out_queue):
+def find_match(gene, df_gene,out_queue):
+
+	## no neeed to create a global variable because this variable is read only
+	# global df_bedfile
+	# global df_bedfile2
 
 	if gene=="nan":return
-
-	df_gene = df_clinvar[df_clinvar['GENE']==gene]
 	if(len(df_gene.index)==0):return
-
 
 	clinvar_positions = df_gene['POS'].values
 	chromosome= df_gene['CHROM'].values[0]
@@ -68,16 +69,7 @@ def find_match(gene, df_clinvar,out_queue):
 	for t in threads:
 		t.join()
 
-	temp=[]
-	temp.append(chromosome)
-	temp.append(gene)
-	temp.append(len(clinvar_positions))
-	temp.append(d1.cov)
-	temp.append(d1.cov_num)
-	temp.append(d2.cov)
-	temp.append(d2.cov_num)
-	combine.append(temp)
-	out_queue.put(temp)
+	out_queue.put([chromosome, gene,len(clinvar_positions), d1.cov, d1.cov_num, d2.cov, d2.cov_num ])
 
 
 
@@ -93,7 +85,7 @@ while counter < totalgenes:
 	processes=[]
 
 	for i in range(10):
-		process = Process(target=find_match, args=(genes[counter],df_clinvar,out_queue))
+		process = Process(target=find_match, args=(genes[counter],df_clinvar[df_clinvar['GENE']==genes[counter]],out_queue))
 		processes.append(process)
 		process.start()
 		counter = counter + 1
