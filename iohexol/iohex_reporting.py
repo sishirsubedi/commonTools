@@ -5,7 +5,7 @@ Created on Fri Jul  6 08:25:51 2018
 @author: tmhsxs240
 """
 import os
-import glob 
+import glob
 import sys
 import pandas as pd
 import numpy as np
@@ -157,9 +157,9 @@ else:
 	  entries.append([DATE,'IOHT1',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IOHT1])
 	  entries.append([DATE,'IOHT2',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IOHT2])
 	  entries.append([DATE,'IOHT3',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IOHT3])
-      entries.append([DATE,'IX120',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IX120])
-      entries.append([DATE,'IX180',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id2,'N/A','N/A','N/A','N/A','N/A','N/A',IX180])
-      entries.append([DATE,'IX240',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',IX240])
+	  entries.append([DATE,'IX120',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IX120])
+	  entries.append([DATE,'IX180',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id2,'N/A','N/A','N/A','N/A','N/A','N/A',IX180])
+	  entries.append([DATE,'IX240',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',IX240])
 	  entries.append([DATE,'LN120',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',LN120])
 	  entries.append([DATE,'LN180',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',LN180])
 	  entries.append([DATE,'LN240',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',LN240])
