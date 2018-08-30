@@ -28,7 +28,7 @@ body
 	padding-right:35px;
 	padding-top:35px;
 	padding-bottom:50px;
-	width: 450px;
+	width: 500px;
 	float: left;
 	left: 50%;
 	position: absolute;
@@ -38,6 +38,22 @@ body
 
 }
 
+
+#home {
+	background-color:rgba(72,72,72,0.4);
+	padding-left:35px;
+	padding-right:35px;
+	padding-top:35px;
+	padding-bottom:50px;
+	width: 500px;
+	float: left;
+	left: 50%;
+	position: absolute;
+  margin-top:30px;
+	margin-left: -260px;
+  border-radius: 7px;
+
+}
 .montform .feedback-input {
 	color:#3c3c3c;
 	font-family: Helvetica, Arial, sans-serif;
@@ -61,6 +77,13 @@ body
   padding: 13px 13px 13px 54px;
 }
 
+.montform .label{
+	background: red;
+	border: 3px solid #3498db;
+	color: #3498db;
+	outline: none;
+  padding: 13px 13px 13px 54px;
+}
 
 /* Icons ---------------------------------- */
 .montform  #comment{
@@ -103,6 +126,9 @@ body
 	color: #0493bd;
 }
 
+
+
+
 .montform  .submit:hover {
 	color: #3498db;
 }
@@ -117,6 +143,28 @@ body
 .submit:hover .ease{
   width:100%;
   background-color:white;
+}
+
+
+.button-blue-home{
+	font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+	float:left;
+	width: 100%;
+	border: #fbfbfb solid 1px;
+	cursor:pointer;
+	background-color: #3498db;
+	color:white;
+	font-size:24px;
+	padding-top:22px;
+	padding-bottom:22px;
+	transition: all 0.3s;
+  margin-top:10px;
+  font-weight:700;
+}
+
+.button-blue-home:hover{
+	background-color: rgba(0,0,0,0);
+	color: #0493bd;
 }
 
 /*Styles for small screens*/
