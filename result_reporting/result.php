@@ -66,7 +66,7 @@ $_SESSION['myvar'] = $date;
 ob_implicit_flush(true);ob_end_flush();
 
 
-$cmd = "/home/hhadmin/python3/bin/python3  iohex_reporting.py $date ";
+$cmd = "/opt/python3/bin/python3  iohex_reporting.py $date ";
 
 $descriptorspec = array(
 			0 => array("pipe", "r"),   // stdin is a pipe that the child will read from

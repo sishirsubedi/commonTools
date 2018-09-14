@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>SequenomV4 Home</title>
+        <link rel="stylesheet" href="form.css" >
+    </head>
+    <body >
+        <div class="container">
+            <div id="form-main">
+                <div id="form-div">
+                    <form class="montform" enctype="multipart/form-data" action="result.php" method="post">
+                      <p> <font size="6" color="black"> Sequenom Report Filter V4 </font> </p>
+                      <p class="file">
+                        <p> <font size="5" color="black"> MutationList File </font> </p>
+                        <input type="file" name="mutation_file" class="feedback-input">
+                        <br><br>
+                        <p> <font size="5" color="black"> Sample File </font> </p>
+                        <input type="file" name="sample_file" class="feedback-input">
+                        <br><br>
+                      </p>
+                        <div class="submit">
+                            <button type="submit" class="button-blue">SUBMIT</button>
+                            <div class="ease"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

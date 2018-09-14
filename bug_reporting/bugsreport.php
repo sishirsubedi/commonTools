@@ -13,6 +13,8 @@
                <th>message</th>
                <th>timeUpdated</th>
                <th>Image</th>
+               <th>Solution</th>
+               <th>Closed</th>
           </tr>
            <thead>
               <tbody>
@@ -20,7 +22,7 @@
      date_default_timezone_set('GMT');
      session_start();
      $connect = mysqli_connect("localhost", "", "", "");
-     $query = "SELECT * FROM hmvv3_bugs ORDER BY bugID DESC";
+     $query = "SELECT * FROM hmvv3_bugs ORDER BY bugID DESC, closed DESC";
      $result = mysqli_query($connect, $query);
      while($row = mysqli_fetch_array($result))
      {
@@ -29,9 +31,11 @@
                     <td>' . htmlspecialchars($row['bugID'] ) . '</td>
                     <td>' . htmlspecialchars($row['message'] ) . '</td>
                     <td>' . htmlspecialchars($row['timeUpdated'] ) . '</td>
-                    <td>
-                       <img alt="" src="data:image/png;base64,'.base64_encode($row['bugImage'] ).'" height="100" width="100" />
+                    <td>';
+                       echo '<img src="images/'.$row['bugURL'].'" />
                     </td>
+                    <td>' . htmlspecialchars($row['solution'] ) . '</td>
+                    <td>' . htmlspecialchars($row['closed'] ) . '</td>
                </tr>
             ';
      }
