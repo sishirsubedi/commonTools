@@ -12,7 +12,7 @@ if (empty($_FILES["mutation_file"]['name']) or empty($_FILES["sample_file"]['nam
 
   echo "<script type='text/javascript'>alert('$message');</script>";
 
-  echo  "<script type='text/javascript'> window.location.href = 'http://10.110.21.70/sequenomV4' </script>";
+  echo  "<script type='text/javascript'> window.location.href = 'http://.IP./sequenomV4' </script>";
 
 }
 
@@ -28,14 +28,11 @@ $error = $_FILES['mutation_file']['error'];
 $location = '/home/scratch/';
 move_uploaded_file($tmp_name, $location.$name);
 
-
 $name2 = $_FILES["sample_file"]["name"];
 $tmp_name2 = $_FILES['sample_file']['tmp_name'];
 $error2 = $_FILES['sample_file']['error'];
 $location = '/home/scratch/';
 move_uploaded_file($tmp_name2, '/home/scratch/sequenomSample.txt');
-
-
 
 ##filter sequenom result##
 ob_implicit_flush(true);ob_end_flush();
@@ -60,18 +57,16 @@ if (is_resource($process)) {
 	}
 echo "</pre>";
 proc_close($process);
-
 }
 else {
           echo 'please choose a file';
           }
 ?>
-
 <div class="container">
     <div id="form-main">
         <div id="form-div">
             <form class="montform" enctype="multipart/form-data" action="result.php" method="post">
-              <a href='http://10.110.21.70/sequenomV4' style="font-size: 30px;color:black;text-decoration:none">Sequenom Report Filter V4</a>
+              <a href='http://.IP./sequenomV4' style="font-size: 30px;color:black;text-decoration:none">Sequenom Report Filter V4</a>
               <br></br>
               You have completed the Sequenom results filtering.
               <br></br>

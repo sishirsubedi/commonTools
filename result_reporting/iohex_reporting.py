@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jul  6 08:25:51 2018
-
-@author: tmhsxs240
-"""
 import os
-import glob ## to delete all old files
+import glob
 import sys
 import pandas as pd
 import numpy as np
@@ -24,7 +19,7 @@ if len(sys.argv) != 2:
     print ( "\n-----------------------------------------------\n")
 else:
     date= sys.argv[1]
-    path="/home/scratch/iohexol/"
+    path=""
 
     # remove all old files
     files = glob.glob(path + "report/*")

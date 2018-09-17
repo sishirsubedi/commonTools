@@ -10,25 +10,20 @@ session_start();
 
 if (empty($_FILES["tasklist"]['name']) or empty($_FILES["tracefinder"]['name'])){
 
-
-
   $message = 'Files not uploaded.\\nTry again.';
 
   echo "<script type='text/javascript'>alert('$message');</script>";
 
   echo  "<script type='text/javascript'> window.location.href = 'http://10.110.21.70/iohexol/submit.html' </script>";
-
 }
 
 ##get the user input##
 else if (isset($_FILES["tasklist"]['name']) and isset($_FILES["tracefinder"]['name'])){
-
 $filename_tl = $_FILES["tasklist"]["name"];
 $filename_tl_tmp_name = $_FILES['tasklist']['tmp_name'];
 $filename_tl_error = $_FILES['tasklist']['error'];
 $filename_tl_ext = explode('.', $filename_tl);
 $filename_tl_ext = strtolower(end($filename_tl_ext));
-
 $tl_allowed = array('txt');
 
 if(in_array($filename_tl_ext,$tl_allowed)){

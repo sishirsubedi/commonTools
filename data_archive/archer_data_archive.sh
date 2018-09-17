@@ -21,14 +21,12 @@ for run in ${runs[*]}; do
 
      echo "number of fastqfiles $fastqfiles"
 
-
      if [ "$fastqfiles" -gt 0  ]; then
      
          # remove all fastq files
          echo "removing fastq files"
          sudo rm -f  $path/$run/*.fastq.gz
          
- 
      else
          message="There are no fastq files on this $run directory to delete."
          echo $message
@@ -39,7 +37,6 @@ for run in ${runs[*]}; do
      rundate=$( stat -c '%y' /$path/$run |cut -d " " -f1,2 | cut -c'1-19'| sed -e 's/\s/_/g' -e 's/\:/\_/g' )
      echo "archive directory is named as :  "$run"_"$rundate""
      tar -czf /archive/Archer_ARCHIVE/archer_archive_"$run"_"$rundate".tar.gz $path/$run/*
-
 
      if [ -f /archive/Archer_ARCHIVE/archer_archive_"$run"_"$rundate".tar.gz ]; then
 

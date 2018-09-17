@@ -14,7 +14,7 @@ if (empty($_FILES["bug_image"]["name"])){
 
   $message = 'Image not uploaded.\\nTry again.';
   echo "<script type='text/javascript'>alert('$message');</script>";
-  echo  "<script type='text/javascript'> window.location.href = 'http://10.110.21.70/hmvv3/bugs.html' </script>";
+  echo  "<script type='text/javascript'> window.location.href = 'http://.IP./hmvv3/bugs.html' </script>";
 
 }
 
@@ -45,9 +45,9 @@ if(in_array($filename_tl_ext,$tl_allowed)){
     if(mysqli_query($connect, $query))
     {
         echo '<script>alert("Bug has been reported. Thank you !")</script>';
-        echo  "<script type='text/javascript'> window.location.href = 'http://10.110.21.70/hmvv3/bugs.html' </script>";
+        echo  "<script type='text/javascript'> window.location.href = 'http://.IP./hmvv3/bugs.html' </script>";
 
-        $message .= "\n\n\n Check Bug Report: http://10.110.21.70/hmvv3/bugsreport.php";
+        $message .= "\n\n\n Check Bug Report: http://.IP./hmvv3/bugsreport.php";
         $to = "ssubedi@houstonmethodist.org,PAChristensen@houstonmethodist.org";
         //$to = "ssubedi@houstonmethodist.org";
         mail($to,"HMVV3 Bug Reported",$message);
