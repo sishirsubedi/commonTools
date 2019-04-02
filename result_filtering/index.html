@@ -6,24 +6,38 @@
     </head>
     <body >
         <div class="container">
+
             <div id="form-main">
+
                 <div id="form-div">
+
+                  <p> <font size="12" color="black"> Sequenom Report Filter</font> </p>
+                  <p ALIGN=CENTER> <font size="5" color="black"> version 4.1 </font> </p>
                     <form class="montform" enctype="multipart/form-data" action="result.php" method="post">
-                      <p> <font size="6" color="black"> Sequenom Report Filter V4 </font> </p>
-                      <p class="file">
+                      <br>
+                      <br>
+                      <p> <font size="6" color="black"> Choose Assay: </font> </p>
+                        <input type="radio" name="assay" value="Oncocarta" style="width:30px; height:30px;">
+                        <font size="6" color="black"> Oncocarta </font>
+                        <input type="radio" name="assay" value="HSLung"style="width:30px; height:30px;">
+                        <font size="6" color="black"> HSLung </font>
+                        <br><br>
+                        <p class="file">
                         <p> <font size="5" color="black"> MutationList File </font> </p>
                         <input type="file" name="mutation_file" class="feedback-input">
-                        <br><br>
+                        <br>
                         <p> <font size="5" color="black"> Sample File </font> </p>
                         <input type="file" name="sample_file" class="feedback-input">
                         <br><br>
-                      </p>
+                       </p>
                         <div class="submit">
                             <button type="submit" class="button-blue">SUBMIT</button>
                             <div class="ease"></div>
                         </div>
                     </form>
                 </div>
+
+
             </div>
         </div>
     </body>
