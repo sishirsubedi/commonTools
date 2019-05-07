@@ -14,7 +14,7 @@ if (empty($_FILES["tasklist"]['name']) or empty($_FILES["tracefinder"]['name']))
 
   echo "<script type='text/javascript'>alert('$message');</script>";
 
-  echo  "<script type='text/javascript'> window.location.href = 'http://10.110.21.70/iohexol/submit.html' </script>";
+  echo  "<script type='text/javascript'> window.location.href = 'http://IP/iohexol/submit.html' </script>";
 }
 
 ##get the user input##

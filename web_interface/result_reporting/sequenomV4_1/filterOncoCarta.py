@@ -39,4 +39,4 @@ if len(sys.argv) > 1:
 	sample = options.sample
 	filter(input, output, sample)
 else:
-	print ("python filterSequenom.py -h for help")
+	print ("python filterOncoCarta.py -h for help")

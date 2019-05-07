@@ -12,7 +12,7 @@ if (empty($_FILES["sample_file"]['name'])){
 
   echo "<script type='text/javascript'>alert('$message');</script>";
 
-  echo  "<script type='text/javascript'> window.location.href = 'http://10.110.21.70/bcrabl' </script>";
+  echo  "<script type='text/javascript'> window.location.href = 'http://IP/bcrabl' </script>";
 
 }
 
@@ -67,7 +67,7 @@ else {
     <div id="form-main">
         <div id="form-div">
             <form class="montform" enctype="multipart/form-data" action="result.php" method="post">
-              <a href='http://10.110.21.70/bcrabl' style="font-size: 30px;color:black;text-decoration:none">BCR-ABL Reporting Interface </a>
+              <a href='http://IP/bcrabl' style="font-size: 30px;color:black;text-decoration:none">BCR-ABL Reporting Interface </a>
               <br></br>
               BCR-ABL output file is ready for download.
               <br></br>

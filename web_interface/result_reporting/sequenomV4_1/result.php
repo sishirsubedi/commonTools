@@ -77,29 +77,18 @@ if (isset($_POST['assay']))
                   }
       }
     else if ($radioVal == "HSLung"){
-      // echo("You chose the HSLung Assay.");
+      // echo("You chose the Oncocarta Assay.");
 
 
-      if (empty($_FILES["mutation_file"]['name'])){
+      if (empty($_FILES["mutation_file"]['name']) or empty($_FILES["sample_file"]['name'])){
 
-        $message = 'Mutation file not uploaded.\\nTry again.';
-
-        echo "<script type='text/javascript'>alert('$message');</script>";
-
-        echo  "<script type='text/javascript'> window.location.href = 'http://10.110.21.70/sequenomV4_1' </script>";
-
-      }
-
-      if (! empty($_FILES["sample_file"]['name'])){
-
-        $message = 'Sample file should not be uploaded for HSLung Assay.\\nTry again.';
+        $message = 'MutationList and Sample Files are not uploaded.\\nTry again.';
 
         echo "<script type='text/javascript'>alert('$message');</script>";
 
         echo  "<script type='text/javascript'> window.location.href = 'http://10.110.21.70/sequenomV4_1' </script>";
 
       }
-
 
       if(!session_id()) session_start();
       session_unset();
@@ -114,9 +103,17 @@ if (isset($_POST['assay']))
       move_uploaded_file($tmp_name, $location.$name);
 
 
+      $name2 = $_FILES["sample_file"]["name"];
+      $tmp_name2 = $_FILES['sample_file']['tmp_name'];
+      $error2 = $_FILES['sample_file']['error'];
+      $location = '/home/scratch/';
+      move_uploaded_file($tmp_name2, '/home/scratch/sequenomSample.txt');
+
+
+
       ##filter sequenom result##
       ob_implicit_flush(true);ob_end_flush();
-      $cmd = "python /var/www/html/sequenomV4_1/filterHSLung.py -I /home/scratch/$name -o /home/scratch/$name.out.csv";
+      $cmd = "python /var/www/html/sequenomV4_1/filterHSLung.py -I /home/scratch/$name -o /home/scratch/$name.out.csv -s /home/scratch/sequenomSample.txt";
       $descriptorspec = array(
             0 => array("pipe", "r"),   // stdin is a pipe that the child will read from
             1 => array("pipe", "w"),   // stdout is a pipe that the child will write to

@@ -1,9 +1,0 @@
-[15-Feb-2019 09:49:31] PHP Parse error:  syntax error, unexpected T_CONSTANT_ENCAPSED_STRING in /var/www/html/bcrabl/result.php on line 29
-[15-Feb-2019 09:49:48] PHP Parse error:  syntax error, unexpected T_CONSTANT_ENCAPSED_STRING in /var/www/html/bcrabl/result.php on line 29
-[15-Feb-2019 09:52:35] PHP Notice:  Undefined index: name in /var/www/html/bcrabl/download.php on line 4
-[15-Feb-2019 09:55:20] PHP Notice:  Undefined index: name in /var/www/html/bcrabl/download.php on line 4
-[15-Feb-2019 09:56:08] PHP Parse error:  syntax error, unexpected T_VARIABLE in /var/www/html/bcrabl/result.php on line 28
-[15-Feb-2019 10:02:42] PHP Parse error:  syntax error, unexpected T_CONSTANT_ENCAPSED_STRING in /var/www/html/bcrabl/result.php on line 29
-[15-Feb-2019 10:06:31] PHP Notice:  Undefined index: name in /var/www/html/bcrabl/download.php on line 4
-[15-Feb-2019 10:08:55] PHP Notice:  Undefined index: name in /var/www/html/bcrabl/download.php on line 4
-[15-Feb-2019 10:20:43] PHP Parse error:  syntax error, unexpected '}' in /var/www/html/bcrabl/result.php on line 63
