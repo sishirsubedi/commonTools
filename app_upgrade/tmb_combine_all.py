@@ -10,10 +10,12 @@ import seaborn as sns
 import numpy as np
 import scipy.stats as st
 from statsmodels.nonparametric.kernel_regression import KernelReg
+from sklearn.cluster import KMeans,AgglomerativeClustering
+from sklearn.mixture import GaussianMixture
 from sklearn.linear_model import LinearRegression
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.metrics import r2_score
-from sklearn.cluster import KMeans
+from scipy.cluster.hierarchy import dendrogram, linkage
 
 def get_result_files (f1):
     samples=[]
@@ -93,14 +95,7 @@ def plot_generalInfo(df_join):
 
 def plot_sequence_stats(df_join):
 
-    df_join['Tumor_Total-Reads'] = df_join['Tumor_Total-Reads'].astype(int)
-    df_join['Normal_Total-Reads'] = df_join['Normal_Total-Reads'].astype(int)
-
-    df_join['Tumor_Total-Reads-ADup'] = df_join['Tumor_Total-Reads-ADup'].astype(int)
-    df_join['Normal_Total-Reads-ADup'] = df_join['Normal_Total-Reads-ADup'].astype(int)
-
-    df_join['Tumor_Total-Reads-ADup-p'] =  (df_join['Tumor_Total-Reads-ADup']/df_join['Tumor_Total-Reads']) * 100
-    df_join['Normal_Total-Reads-ADup-p'] = (df_join['Normal_Total-Reads-ADup']/df_join['Normal_Total-Reads'])* 100
+    print(df_join.head(2))
 
     df_join['Tumor_Total-Reads'] = df_join['Tumor_Total-Reads'].astype(int)/1000000
     df_join['Normal_Total-Reads'] = df_join['Normal_Total-Reads'].astype(int)/1000000
@@ -109,10 +104,8 @@ def plot_sequence_stats(df_join):
     df_join['Normal_Coverage'] =  [int(x.replace('x','')) for x in df_join['Normal_Coverage']]
 
     for col in ['Tumor_Duplicate','Normal_Duplicate','Tumor_Coverage-10X', 'Normal_Coverage-10X','Tumor_Coverage-20X', 'Normal_Coverage-20X',
-                'Tumor_Coverage-50X', 'Normal_Coverage-50X','Tumor_Coverage-100X','Normal_Coverage-100X']:
+                'Tumor_Coverage-50X', 'Normal_Coverage-50X','Tumor_Coverage-100X','Normal_Coverage-100X','Tumor_Total-Reads-ADup', 'Normal_Total-Reads-ADup']:
         df_join[col] =  [int(x.replace('%','')) for x in df_join[col]]
-
-    df_join['Tumor_Breadth-Coverage'] = df_join['Tumor_Breadth-Coverage'].astype(int)
 
     fig= plt.figure(num=None, figsize=(15, 10), dpi=80, facecolor='w', edgecolor='k')
     ax1 = plt.subplot2grid((3, 2), (0, 0))
@@ -125,7 +118,7 @@ def plot_sequence_stats(df_join):
     df_join.boxplot(column=['Tumor_Coverage', 'Normal_Coverage'],ax=ax2)
     ax2.title.set_text('Average Coverage')
     ax2.set_xticklabels(['Tumor','Normal'])
-    df_join.boxplot(column=['Tumor_Total-Reads-ADup-p', 'Normal_Total-Reads-ADup-p','Tumor_Duplicate', 'Normal_Duplicate'],ax=ax3)
+    df_join.boxplot(column=['Tumor_Total-Reads-ADup', 'Normal_Total-Reads-ADup','Tumor_Duplicate', 'Normal_Duplicate'],ax=ax3)
     ax3.title.set_text('Total Reads Pass Percentage and Duplicate Percentage')
     ax3.set_xticklabels(['Tumor Reads Pass','Normal Reads Pass','Tumor Duplicate','Normal Duplicate'])
     df_join.boxplot(column=['Tumor_Coverage-10X', 'Normal_Coverage-10X','Tumor_Coverage-20X', 'Normal_Coverage-20X', 'Tumor_Coverage-50X', 'Normal_Coverage-50X','Tumor_Coverage-100X','Normal_Coverage-100X'],ax=ax4)
@@ -159,17 +152,73 @@ def fitData (X,y,method):
         return model.fit(x2)[0]
 
 
-def plotClustering(df_join):
-    kmeans = KMeans(n_clusters=3)
+def plotClustering(df_join, type):
+
     d_points=np.reshape(df_join['TMB-Total-Variants'],(-1,1))
-    kmeans.fit(d_points)
-    df_join['cluster'] = kmeans.fit_predict(d_points)
-    sns.scatterplot(x=range(df_join.shape[0]) ,y=df_join['TMB-Total-Variants'].sort_values(), hue="cluster", data=df_join,palette=['blue','red','green'])
-    # plt.title("Cluster Analysis, centers "+ " , ".join([ str(round(x[0],2)) for x in kmeans.cluster_centers_ ]))
-    plt.title("Cluster Analysis")
-    plt.xlabel(" Group cutoffs- (0,119) (120,319) (>=320)")
-    plt.savefig("Fig_5_TMB_HMH_kmeans_score.png")
-    plt.close()
+    t_points=np.reshape(range(0,350),(-1,1))
+
+    if type == "kmeans":
+
+        model = KMeans(n_clusters=3).fit(d_points)
+        df_join['kmeans'] = model.predict(d_points)
+
+        sns.scatterplot(x=range(df_join.shape[0]) ,y=df_join['TMB-Total-Variants'].sort_values(), hue="kmeans", data=df_join,palette=['blue','red','green'])
+        plt.title("Cluster Analysis - Kmeans")
+        plt.savefig("Fig_5_TMB_HMH_kmeans_score.png")
+        plt.close()
+
+        return model.predict(t_points)
+
+
+    elif type == "gmix":
+
+        # model = GaussianMixture(n_components=3,init_params='random').fit(d_points)
+        model = GaussianMixture(n_components=3).fit(d_points)
+        df_join['gmix'] = model.predict(d_points)
+
+        sns.scatterplot(x=range(df_join.shape[0]) ,y=df_join['TMB-Total-Variants'].sort_values(), hue="gmix", data=df_join,palette=['blue','red','green'])
+        plt.title("Cluster Analysis - Gmixture")
+        plt.savefig("Fig_5_TMB_HMH_gmix_score.png")
+        plt.close()
+
+        return model.predict(t_points)
+
+    elif type == "hclust":
+
+        model = AgglomerativeClustering(n_clusters=3).fit(d_points)
+        df_join['hclust'] = model.fit_predict(d_points)
+
+        sns.scatterplot(x=range(df_join.shape[0]) ,y=df_join['TMB-Total-Variants'].sort_values(), hue="hclust", data=df_join,palette=['blue','red','green'])
+        plt.title("Cluster Analysis - hclust ")
+        plt.savefig("Fig_5_TMB_HMH_hclust_score.png")
+        plt.close()
+
+
+        linkage_matrix = linkage(d_points, 'ward')
+        figure = plt.figure(figsize=(7.5, 5))
+        dendrogram(
+            linkage_matrix,
+            color_threshold=0,
+        )
+        plt.title('Hierarchical Clustering Dendrogram (Ward)')
+        plt.xlabel('sample index')
+        plt.ylabel('distance')
+        plt.savefig("Fig_5_TMB_HMH_hclust_dendog_score.png")
+        plt.close()
+
+
+        centers={}
+        centers[0]=df_join[df_join['hclust']==0]['TMB-Total-Variants'].mean()
+        centers[1]=df_join[df_join['hclust']==1]['TMB-Total-Variants'].mean()
+        centers[2]=df_join[df_join['hclust']==2]['TMB-Total-Variants'].mean()
+
+        predict =[]
+        for point in t_points:
+            predict.append(np.argmin([np.abs(point-centers[0])[0],np.abs(point-centers[1])[0],np.abs(point-centers[2])[0]]))
+
+        return predict
+
+
 
 
 
@@ -222,17 +271,45 @@ plt.title("TMB Score Comparisons , S/P/R^2= " +
         str(round(st.spearmanr(df_join['TMB-Total-Variants'],df_join['TMB-Foundation-Value'])[0],3))+"/" +
         str(round(st.pearsonr(df_join['TMB-Total-Variants'],df_join['TMB-Foundation-Value'])[0],3)) +"/" +
         str(round(r2_score(y, y_slr),3)))
-plt.savefig("Fig_4_TMB_HMH_Foundation_Variants_Score_ScatterPlot_main.png.png")
+plt.savefig("Fig_4_TMB_HMH_Foundation_Variants_Score_ScatterPlot_main.png")
 plt.close()
 
 
+### caris vs Foundation
+x1 = np.reshape(df_join[df_join['Source']=="Caris"]['TMB-Total-Variants'].values,(-1,1))
+y1 = df_join[df_join['Source']=="Caris"]['TMB-Foundation-Value'].values
+y1_slr = fitData(x1,y1,"simple-lr")
+sns.regplot(x=x1, y=y1, ci=None)
+plt.title("TMB Score Comparison-Caris, S/P/R^2= "+ str(round(st.spearmanr(x1,y1)[0],3))+"/" + str(round(st.pearsonr(df_join[df_join['Source']=="Caris"]['TMB-Total-Variants'].values,y1)[0],3)) + "/" +str(round(r2_score(y1, y1_slr),3)) )
+plt.savefig("TMB_HMH_Variants_Foundation_Score_ScatterPlot_Caris.png")
+plt.close()
+
+x2 = np.reshape(df_join[df_join['Source']=="Foundation"]['TMB-Total-Variants'].values,(-1,1))
+y2 = df_join[df_join['Source']=="Foundation"]['TMB-Foundation-Value'].values
+y2_slr = fitData(x2,y2,"simple-lr")
+sns.regplot(x=x2, y=y2, ci=None)
+plt.title("TMB Score Comparison-Foundation, S/P/R^2= "+ str(round(st.spearmanr(x2,y2)[0],3))+"/" + str(round(st.pearsonr(df_join[df_join['Source']=="Foundation"]['TMB-Total-Variants'].values,y2)[0],3)) +"/" + str(round(r2_score(y2, y2_slr),3)) )
+plt.savefig("TMB_HMH_Variants_Foundation_Score_ScatterPlot_Foundation.png")
+plt.close()
+
 #####  clustering
-plotClustering(df_join)
+kmeans = plotClustering(df_join, "kmeans")
+hclust = plotClustering(df_join, "hclust")
+gmix = plotClustering(df_join, "gmix")
+df_pred = pd.DataFrame([range(0,350), kmeans,hclust,gmix]).T
+df_pred.columns = ['vals','kmeans','hclust','gmix']
+df_pred.to_csv("cluster_model_temp.csv",index=False)
 
-
-
-
-
+# df_model = pd.read_csv("cluster_model.csv")
+# sns.lineplot(x=range(0,350), y="kmeans",data=df_model,label='kmeans' )
+# sns.lineplot(x=range(0,350), y="hclust",data=df_model,label='hclust' )
+# sns.lineplot(x=range(0,350), y="gmix",data=df_model,label='gmixture' )
+# sns.lineplot(x=range(0,350), y="gmix2nd",data=df_model,label='gmixture-2nd')
+# plt.ylabel("group")
+# plt.xlabel('HMH TMB Total Variants')
+# plt.title("kmeans (118-326), hclust (84-300), gmixture (58-276), 2nd (130-284) ")
+# plt.savefig("TMB_HMH_Variants_Foundation_Score_Cluster_lineplot.png")
+# plt.close()
  ############ other extra plots
 # # st.probplot(df['TLOD'],dist="expon", plot=pylab)
 # # plt.savefig("qqplot_expon_t.png")
@@ -255,19 +332,3 @@ plotClustering(df_join)
 # # df_join[ ( (df_join['TMB-Total-Variants']<200.0 ) & (df_join['TMB-Foundation-Value']<10.0))].shape[0]
 # # df_join[ ( (df_join['TMB-Total-Variants']>=200.0 ) & (df_join['TMB-Foundation-Value']>10.0))].shape[0]
 #
-#
-# ### caris vs Foundation
-# x1 = df_join[df_join['Source']=="Caris"]['TMB-Total-Variants'].values
-# y1 = df_join[df_join['Source']=="Caris"]['TMB-Foundation-Value'].values
-# x2 = df_join[df_join['Source']=="Foundation"]['TMB-Total-Variants'].values
-# y2 = df_join[df_join['Source']=="Foundation"]['TMB-Foundation-Value'].values
-#
-# sns.regplot(x=x1, y=y1, ci=None)
-# plt.title("TMB Score Comparisons-Caris, S/P=" + str(round(st.spearmanr(x1,y1)[0],3))+"/" + str(round(st.pearsonr(x1,y1)[0],3)) )
-# plt.savefig("TMB_HMH_Variants_Foundation_Score_ScatterPlot_Caris.png")
-# plt.close()
-#
-# sns.regplot(x=x2, y=y2, ci=None)
-# plt.title("TMB Score Comparisons-Foundation, S/P="+ str(round(st.spearmanr(x2,y2)[0],3))+"/" + str(round(st.pearsonr(x2,y2)[0],3)) )
-# plt.savefig("TMB_HMH_Variants_Foundation_Score_ScatterPlot_Foundation.png")
-# plt.close()
