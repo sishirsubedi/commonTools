@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <title>HMVV Home </title>
+
+  <link rel="stylesheet" href="css/demo-styles.css" />
+  <script src="js/modernizr-1.5.min.js"></script>
+
+</head>
+
+<body>
+ <header>
+   <a href="http://10.110.21.70/hmvv34/"> Houston Methodist Variant Viewer  </a>
+ </header>
+<div class="main-container">
+  <div id="form-main">
+      <div id="form-div">
+          <form class="montform" id="reused_form" enctype="multipart/form-data" action="request_access.php" method="post" >
+              <p align="center"> <font size="12" style="color:white"> Request Access </font> </p>
+
+
+              <input name="fullname" class="general-input" placeholder="Full Name"></input>
+              <input name="networkid" class="general-input" placeholder="Network ID"></input>
+              <input name="email" class="general-input"  placeholder="Email"></input>
+              <input name="accesscode" class="general-input" placeholder="Access Code"></input>
+
+              <br>
+              <br>
+              <input type="radio" name="usertype" value="pathologist"><font style="color:white"> Pathologist <br>
+              <input type="radio" name="usertype" value="fellow"><font style="color:white"> Molecular Fellow<br>
+              <input type="radio" name="usertype" value="rotator"><font style="color:white"> Rotator<br>
+              <input type="radio" name="usertype" value="technologist"><font style="color:white"> Technologist <br>
+              <br>
+              <br>
+              <div class="submit">
+                  <button type="submit" class="button-blue">SUBMIT</button>
+              </div>
+
+          </form>
+      </div>
+  </div>
+        </div>
+    </body>
+</html>
