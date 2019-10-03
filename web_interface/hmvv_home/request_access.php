@@ -1,9 +1,35 @@
 <head>
     <meta charset="utf-8">
-    <title>HMVV3 Bug Reporting Tool</title>
-    <link rel="stylesheet" href="form.css" >
+    <title>HMVV3 Access Request Form</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script type="text/javascript" src="js/modernizr-1.5.min.js"></script>
+
+    <script type="text/javascript">
+    $(window).load(function() {
+    	$(".loader").fadeOut("slow");
+    })
+    </script>
+
+
+    <style>
+    .loader
+    {
+     position: fixed;
+     left: 0px;
+     top: 0px;
+     width: 100%;
+     height: 100%;
+     z-index: 9999;
+     background: url('images/processing.gif') 50% 50% no-repeat rgb(249,249,249);
+    }
+    </style>
+
+
 </head>
 <body style="background-color:grey;">
+
+  <div class="loader">  </div>
+
 <?php
 
 date_default_timezone_set('GMT');
@@ -26,8 +52,9 @@ $CREATEACCOUNT=$CREATEACCOUNT_line[1];
 
 $connect = mysqli_connect("$HOST", "$USER", "$PASS", "$DATABASE");
 
-$ACCESSCODES = array("hmvv001", "hmvv012", "hmvv111");
-
+$ACCESSCODES = array("hmvv001","hmvv002","hmvv003","hmvv004","hmvv005",
+                     "hmvv006","hmvv007","hmvv008","hmvv009","hmvv010",
+                     "hmvv011","hmvv012", "hmvv999");
 
 $fullname = $_POST['fullname'];
 $networkid = $_POST['networkid'];
@@ -36,7 +63,7 @@ $accesscode = $_POST['accesscode'];
 
 if (  empty($fullname)  ||  empty($networkid) || empty($email) || empty($accesscode)  || !(isset($_POST['usertype'])) )
 {
-  $message = 'One or more fields empty';
+  $message = 'One or more fields empty. Please submit a complete form.';
   echo "<script type='text/javascript'>alert('$message');</script>";
   echo  "<script type='text/javascript'> window.location.href = '$HMVVHOME' </script>";
 
@@ -46,7 +73,7 @@ if (  empty($fullname)  ||  empty($networkid) || empty($email) || empty($accessc
 
     if( ! in_array($accesscode, $ACCESSCODES))
     {
-      $message = 'Access code is incorrect. Try again.';
+      $message = 'Access code is incorrect. Please try again.';
       echo "<script type='text/javascript'>alert('$message');</script>";
       echo  "<script type='text/javascript'> window.location.href = '$HMVVHOME' </script>";
 
@@ -58,41 +85,41 @@ if (  empty($fullname)  ||  empty($networkid) || empty($email) || empty($accessc
 
       if( mysqli_num_rows($result) > 0)
       {
-        $message = 'User exists in the system. Please make sure your network ID is correct.';
+        $message = 'This user is already registered in the system. Please login using your current networkID.';
         echo "<script type='text/javascript'>alert('$message');</script>";
         echo  "<script type='text/javascript'> window.location.href = '$HMVVHOME' </script>";
 
       } else {
 
-      // ob_implicit_flush(true);ob_end_flush();
-      // $cmd = "sudo /bin/bash $CREATEACCOUNT  $networkid  >> /home/scratch/new_account.log";
-      // $descriptorspec = array(
-      // 			0 => array("pipe", "r"),   // stdin is a pipe that the child will read from
-      // 			1 => array("pipe", "w"),   // stdout is a pipe that the child will write to
-      // 			2 => array("pipe", "w")    // stderr is a pipe that the child will write to
-      // 				);
-      // 	flush();
-      //
-      // $process = proc_open($cmd, $descriptorspec, $pipes, realpath('./'), array());
-      //
-      // echo "<pre>";
-      // if (is_resource($process)) {
-      // 	while ($s = fgets($pipes[1])) {
-      // 		print $s;
-      // 		flush();
-      //     }
-      // 	while ($e = fgets($pipes[2])){
-      // 		print $e;
-      // 		flush();
-      // 	}
-      // 	}
-      // echo "</pre>";
-      // proc_close($process);
+      ob_implicit_flush(true);ob_end_flush();
+      $cmd = "sudo /bin/bash $CREATEACCOUNT  $networkid  >> /home/scratch/new_account.log";
+      $descriptorspec = array(
+      			0 => array("pipe", "r"),   // stdin is a pipe that the child will read from
+      			1 => array("pipe", "w"),   // stdout is a pipe that the child will write to
+      			2 => array("pipe", "w")    // stderr is a pipe that the child will write to
+      				);
+      	flush();
+
+      $process = proc_open($cmd, $descriptorspec, $pipes, realpath('./'), array());
+
+      echo "<pre>";
+      if (is_resource($process)) {
+      	while ($s = fgets($pipes[1])) {
+      		print $s;
+      		flush();
+          }
+      	while ($e = fgets($pipes[2])){
+      		print $e;
+      		flush();
+      	}
+      	}
+      echo "</pre>";
+      proc_close($process);
 
       $insert_query = "insert into user (networkID, userName, email, userType,accountType,status) values('$networkid','$fullname','$email','$usertype','$accesscode','active')";
       if(mysqli_query($connect, $insert_query))
       {
-              echo '<script>alert("User has been registered. Thank you !")</script>';
+              echo '<script>alert("User has been registered. You will receive a confirmation email.Thank you !")</script>';
               echo  "<script type='text/javascript'> window.location.href = '$HMVVHOME' </script>";
 
               $message .= "
