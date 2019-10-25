@@ -100,7 +100,6 @@ def addRow(df_datamatrix, df_sample):
 
 df_datamatrix = pd.DataFrame()
 
-
 ### input as text file with file names
 # with open(sys.argv[1]) as fp:
 #    line = fp.readline().strip()
@@ -112,20 +111,15 @@ df_datamatrix = pd.DataFrame()
 #
 
 
-### input as zipped folder 
+### input as zipped folder
 with zipfile.ZipFile(sys.argv[1], "r") as f:
-    # cnt = 1
     for name in f.namelist():
         with f.open(name) as file:
            print("processing..."+ str(name))
            try:
                df_sample = extractFeature(file)
-               ## need to update reference of datamatrix bc datamatrix is called but not initialized (line 101)
                df_datamatrix = addRow(df_datamatrix,df_sample)
            except:
                sys.stderr.write("Sample failed %s\n" % name); continue
-           # cnt = cnt + 1
-        # if cnt==10:
-            # break
 
 df_datamatrix.to_csv("Result_DataMatrix.csv",index=False)
