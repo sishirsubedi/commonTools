@@ -3,8 +3,9 @@ import re
 import pandas as pd
 import basemodel as bm
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 from sklearn import preprocessing
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score,cross_val_predict
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from sklearn.naive_bayes import GaussianNB
@@ -36,8 +37,9 @@ X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cat
 
 ######### best model ######
 gb = GradientBoostingClassifier()
+
 gb.fit(X_train, y_train)
-bm.evaluateModel(gb,X_test,y_test,"gb_roc")
+bm.evaluateModel(gb,X_test,y_test)
 
 cross_val_score(gb, X_train, y_train, cv=10)
 cross_val_score(gb, df_xmat.values, df_ymat_cat, cv=10)
@@ -50,8 +52,23 @@ df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'][0:3]
 X_train, X_test, y_train, y_test = train_test_split( df_xmat_gbf.values, df_ymat_cat, test_size=0.4, random_state=0)
 gb = GradientBoostingClassifier()
 gb.fit(X_train, y_train)
-bm.evaluateModel(gb,X_test,y_test,"gb_roc")
-bm.topFeatures(df_xmat_gbf.columns,gb.feature_importances_)
+bm.evaluateModel(gb,X_test,y_test)
+
+
+##### for cross validation
+cv = KFold(n_splits=10, random_state=0, shuffle=False)
+for train_index, test_index in cv.split(df_xmat.values):
+
+    X_train = df_xmat.iloc[train_index,:].values
+    X_test = df_xmat.iloc[test_index,:].values
+    y_train = [df_ymat_cat[i] for i in train_index]
+    y_test  = [df_ymat_cat[i] for i in test_index]
+
+    gb = GradientBoostingClassifier()
+    gb.fit(X_train, y_train)
+    print(bm.evaluateModel(gb,X_test,y_test))
+
+
 
 ### other categorical models
 
