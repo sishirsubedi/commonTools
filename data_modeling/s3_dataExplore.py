@@ -25,30 +25,53 @@ df_ymat_cont = df[['PTH']]
 ###categorical predictions
 df_ymat_cat  = []
 for x in df_ymat_cont.values:
-    if x<66:
+    #if ca < ___(8?) then 0
+    #else if pth
+    if x < 66:
         df_ymat_cat.append(0)
     else:
         df_ymat_cat.append(1)
 
 ### categorical data modeling
 
-X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cat, test_size=0.4, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cat, test_size=0.33, random_state=0)
 
 
-######### best model ######
+######### # hyperparameter tuning ######
+
+params_random = grid_search('RF',X_train,y_train,'RANDOMIZE')
+
+params_random_selected= {'bootstrap': [False],
+                'max_depth': [80,50],
+                'max_features': ['auto'],
+                'min_samples_leaf': [1,5],
+                'min_samples_split': [10,15],
+                'n_estimators': [1000]}
+
+params_focused = grid_search('RF',X_train,y_train,'FOCUSED',params_random_selected)
+
+param_grid = {
+    "n_estimators": [10,20,50],
+    "max_depth": [1,5,10],
+    "min_samples_leaf": [25,50,100]}
+scoremat,best_p = grid_search('RF',X_train,y_train,p_grid=param_grid)
+
+param_grid = {
+    "n_estimators": [100,150,300],
+    "max_depth": [3,6,12],
+    "min_samples_leaf": [1,10,20]}
+scoremat,best_p = grid_search('GB',X_train,y_train,cv_=3,p_grid=param_grid,verbose=True)
+
+
 gb = GradientBoostingClassifier()
-
 gb.fit(X_train, y_train)
 bm.evaluateModel(gb,X_test,y_test)
 
-cross_val_score(gb, X_train, y_train, cv=10)
-cross_val_score(gb, df_xmat.values, df_ymat_cat, cv=10)
 
-
+### test prediction power of top selected features
 gb_topfeat = bm.topFeatures(df_xmat.columns,gb.feature_importances_)
 df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'].values]]
 df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'][0:3].values]]
-
 X_train, X_test, y_train, y_test = train_test_split( df_xmat_gbf.values, df_ymat_cat, test_size=0.4, random_state=0)
 gb = GradientBoostingClassifier()
 gb.fit(X_train, y_train)
