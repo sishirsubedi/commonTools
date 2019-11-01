@@ -50,11 +50,16 @@ params_random_selected= {'bootstrap': [False],
 
 params_focused = grid_search('RF',X_train,y_train,'FOCUSED',params_random_selected)
 
-param_grid = {
-    "n_estimators": [10,20,50],
-    "max_depth": [1,5,10],
-    "min_samples_leaf": [25,50,100]}
-scoremat,best_p = grid_search('RF',X_train,y_train,p_grid=param_grid)
+
+params_focused_selected = {'bootstrap': False,
+ 'max_depth': [50],
+ 'max_features': ['auto'],
+ 'min_samples_leaf': [1],
+ 'min_samples_split': [10],
+ 'n_estimators': [1000]}
+
+
+mat,best_p = grid_search('RF',X_train,y_train,'EXACT',params_focused_selected)
 
 param_grid = {
     "n_estimators": [100,150,300],

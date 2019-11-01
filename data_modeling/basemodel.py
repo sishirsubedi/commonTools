@@ -80,10 +80,9 @@ def grid_search(model,xdata,ydata,mode,param_grid=None):
                     n_estimators=int(n_estimator),
                     min_samples_leaf=int(min_samples_leaf),
                     random_state =0 )
-                    predicted = cross_val_predict(model, xdata,ydata, cv=cv_)
+                    predicted = cross_val_predict(model, xdata,ydata, cv=3)
                     res_matrix[max_depth_index, n_estimator_index, min_samples_leaf_index] = metrics.accuracy_score(ydata, predicted)
-                    if verbose == True:
-                        print('\rGRID SEARCHING RF: processing set:| %s | %s | %s |' % (n_estimator_index,max_depth_index,min_samples_leaf_index))
+                    print('\rGRID SEARCHING RF: processing set:| %s | %s | %s |' % (n_estimator_index,max_depth_index,min_samples_leaf_index))
         best_p = np.where(res_matrix == res_matrix.max())
         return res_matrix,(param_grid['n_estimators'][best_p[0][0]],param_grid['max_depth'][best_p[1][0]],param_grid['min_samples_leaf'][best_p[2][0]])
 
@@ -97,10 +96,9 @@ def grid_search(model,xdata,ydata,mode,param_grid=None):
                     n_estimators=int(n_estimator),
                     min_samples_leaf=int(min_samples_leaf),
                     random_state =0 )
-                    predicted = cross_val_predict(model, xdata,ydata, cv=cv_)
+                    predicted = cross_val_predict(model, xdata,ydata, cv=3)
                     res_matrix[max_depth_index, n_estimator_index, min_samples_leaf_index] = metrics.accuracy_score(ydata, predicted)
-                    if verbose == True:
-                        print('\rGRID SEARCHING GB: processing set:| %s | %s | %s |' % (n_estimator_index,max_depth_index,min_samples_leaf_index))
+                    print('\rGRID SEARCHING GB: processing set:| %s | %s | %s |' % (n_estimator_index,max_depth_index,min_samples_leaf_index))
         best_p = np.where(res_matrix == res_matrix.max())
         return res_matrix,(param_grid['n_estimators'][best_p[0][0]],param_grid['max_depth'][best_p[1][0]],param_grid['min_samples_leaf'][best_p[2][0]])
 
