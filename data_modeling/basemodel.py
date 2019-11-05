@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier,GradientBoostingClassifier
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_predict
@@ -39,8 +39,7 @@ def correlation_info(datamatrix,th,drop,draw):
 
     if drop ==1:
         return todrop
-    else:
-        return  []
+
 
 
 

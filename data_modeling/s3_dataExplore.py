@@ -84,17 +84,21 @@ bm.evaluateModel(gb,X_test,y_test)
 
 
 ##### for cross validation
-cv = KFold(n_splits=10, random_state=0, shuffle=False)
-for train_index, test_index in cv.split(df_xmat.values):
 
-    X_train = df_xmat.iloc[train_index,:].values
-    X_test = df_xmat.iloc[test_index,:].values
-    y_train = [df_ymat_cat[i] for i in train_index]
-    y_test  = [df_ymat_cat[i] for i in test_index]
+def defaultModels(df_xmat,df_ymat_cat):
 
-    gb = GradientBoostingClassifier()
-    gb.fit(X_train, y_train)
-    print(bm.evaluateModel(gb,X_test,y_test))
+    cv = KFold(n_splits=10, random_state=0, shuffle=False)
+
+    for train_index, test_index in cv.split(df_xmat.values):
+
+        X_train = df_xmat.iloc[train_index,:].values
+        X_test = df_xmat.iloc[test_index,:].values
+        y_train = [df_ymat_cat[i] for i in train_index]
+        y_test  = [df_ymat_cat[i] for i in test_index]
+
+        gb = GradientBoostingClassifier()
+        gb.fit(X_train, y_train)
+        print(bm.evaluateModel(gb,X_test,y_test))
 
 
 
