@@ -1,19 +1,7 @@
 import sys
-import re
 import pandas as pd
 import basemodel as bm
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold
-from sklearn import preprocessing
-from sklearn.model_selection import cross_val_score,cross_val_predict
-from sklearn.linear_model import LinearRegression
-from sklearn.svm import SVR
-from sklearn.naive_bayes import GaussianNB
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-
-# df = pd.read_csv(sys.argv[1])
 
 df = pd.read_csv("d2_final_datamat.csv")
 
@@ -32,9 +20,33 @@ for x in df_ymat_cont.values:
     else:
         df_ymat_cat.append(1)
 
-### categorical data modeling
 
+
+#### default model survey
+
+default_models = bm.defaultModels(df_xmat,df_ymat_cat)
+for m in default_models :
+    print(m[0],m[1][0],m[1][1],m[1][2],m[1][3],m[1][4],m[1][5],m[1][6],m[1][7],m[1][8],m[1][9])
+
+### categorical data modeling
+### feature selection
 X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cat, test_size=0.33, random_state=0)
+
+gb = GradientBoostingClassifier()
+gb.fit(X_train, y_train)
+bm.evaluateModel(gb,X_test,y_test)
+print(bm.modelMetrics(y_test,gb.predict(X_test),gb.predict_proba(X_test)))
+
+
+### test prediction power of top selected features
+gb_topfeat = bm.topFeatures(df_xmat.columns,gb.feature_importances_)
+df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'].values]]
+# df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'][0:3].values]]
+X_train, X_test, y_train, y_test = train_test_split( df_xmat_gbf.values, df_ymat_cat, test_size=0.3, random_state=0)
+gb = GradientBoostingClassifier()
+gb.fit(X_train, y_train)
+bm.evaluateModel(gb,X_test,y_test)
+
 
 
 ######### # hyperparameter tuning ######
@@ -68,37 +80,10 @@ param_grid = {
 scoremat,best_p = grid_search('GB',X_train,y_train,cv_=3,p_grid=param_grid,verbose=True)
 
 
-gb = GradientBoostingClassifier()
-gb.fit(X_train, y_train)
-bm.evaluateModel(gb,X_test,y_test)
-
-
-### test prediction power of top selected features
-gb_topfeat = bm.topFeatures(df_xmat.columns,gb.feature_importances_)
-df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'].values]]
-df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'][0:3].values]]
-X_train, X_test, y_train, y_test = train_test_split( df_xmat_gbf.values, df_ymat_cat, test_size=0.4, random_state=0)
-gb = GradientBoostingClassifier()
-gb.fit(X_train, y_train)
-bm.evaluateModel(gb,X_test,y_test)
 
 
 ##### for cross validation
 
-def defaultModels(df_xmat,df_ymat_cat):
-
-    cv = KFold(n_splits=10, random_state=0, shuffle=False)
-
-    for train_index, test_index in cv.split(df_xmat.values):
-
-        X_train = df_xmat.iloc[train_index,:].values
-        X_test = df_xmat.iloc[test_index,:].values
-        y_train = [df_ymat_cat[i] for i in train_index]
-        y_test  = [df_ymat_cat[i] for i in test_index]
-
-        gb = GradientBoostingClassifier()
-        gb.fit(X_train, y_train)
-        print(bm.evaluateModel(gb,X_test,y_test))
 
 
 

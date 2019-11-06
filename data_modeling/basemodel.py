@@ -3,14 +3,19 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier,GradientBoostingClassifier
-from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
-from sklearn.svm import SVC
-from sklearn.model_selection import cross_val_predict
-# from xgboost.sklearn import XGBClassifier
-from sklearn import metrics
 import numpy as np
+
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
+from sklearn.model_selection import cross_val_predict
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
+
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+
+from sklearn.metrics import accuracy_score, log_loss,roc_auc_score,roc_curve,confusion_matrix
 
 
 def correlation_info(datamatrix,th,drop,draw):
@@ -41,7 +46,122 @@ def correlation_info(datamatrix,th,drop,draw):
         return todrop
 
 
+def defaultModels(df_xmat,df_ymat_cat):
 
+    classifiers = [
+    GaussianNB(),
+    DecisionTreeClassifier(),
+    LogisticRegression(),
+    RandomForestClassifier(),
+    AdaBoostClassifier(),
+    GradientBoostingClassifier(),
+    ]
+
+    cv = KFold(n_splits=10, random_state=0, shuffle=False)
+
+    res = []
+
+    for clf in classifiers:
+
+        metrics_cv =[]
+
+        for train_index, test_index in cv.split(df_xmat.values):
+
+            X_train = df_xmat.iloc[train_index,:].values
+            X_test = df_xmat.iloc[test_index,:].values
+            y_train = [df_ymat_cat[i] for i in train_index]
+            y_test  = [df_ymat_cat[i] for i in test_index]
+
+            clf.fit(X_train, y_train)
+            y_predictions = clf.predict(X_test)
+            y_predictions_prob = clf.predict_proba(X_test)
+
+            metrics_cv.append(modelMetrics(y_test, y_predictions,y_predictions_prob))
+
+        res.append([str(clf)[:10],np.array(metrics_cv).mean(axis=0)])
+
+    return res
+
+
+def modelMetrics(y_true,y_pred,y_pred_prob):
+
+    AUC = roc_auc_score(y_true, y_pred_prob[:, 1])
+    LL = log_loss(y_true, y_pred_prob)
+
+    CM = confusion_matrix(y_true, y_pred)
+
+    TN = CM[0][0]
+    FN = CM[1][0]
+    TP = CM[1][1]
+    FP = CM[0][1]
+
+    # Sensitivity, hit rate, recall, or true positive rate
+    TPR = TP/(TP+FN)
+    # Specificity or true negative rate
+    TNR = TN/(TN+FP)
+    # Precision or positive predictive value
+    PPV = TP/(TP+FP)
+    # Negative predictive value
+    NPV = TN/(TN+FN)
+    # False positive rate
+    FPR = FP/(FP+TN)
+    # False negative rate
+    FNR = FN/(TP+FN)
+    # False discovery rate
+    FDR = FP/(TP+FP)
+
+    # Accuracy
+    ACC = (TP+TN)/(TP+FP+FN+TN)
+
+    return [AUC,ACC,LL,TPR,TNR,PPV,NPV,FPR,FNR,FDR]
+
+
+def plot_roc_curve(fpr, tpr,auc,f_name):
+    plt.plot(fpr, tpr, color='orange', label='ROC:'+str(round(auc,2)))
+    plt.plot([0, 1], [0, 1], color='darkblue', linestyle='--')
+    plt.xlabel('1 - Specificity')
+    plt.ylabel('Sensitivity')
+    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.legend()
+    plt.savefig(f_name+".png")
+    plt.close()
+
+def plot_senspec_curve(specificity, tpr,auc,f_name):
+
+    # ax = plt.axes(projection='3d')
+    # ax.plot3D(thresholds[1:], specificity[1:], tpr[1:], 'gray')
+    # ax.set_xlabel('thresholds')
+    # ax.set_ylabel('specificity')
+    # ax.set_zlabel('tpr')
+    # plt.savefig(f_name+"_sen_spec.png")
+    # plt.close()
+
+    plt.plot(specificity, tpr, color='orange')
+    plt.xlabel('Specificity')
+    plt.ylabel('Sensitivity')
+    plt.title('Specificity-Sensitivity Curve')
+    plt.savefig(f_name+"_sen_spec.png")
+    plt.close()
+
+def evaluateModel(model,X_test,y_test,isplot=None,f_name=None):
+    probs = model.predict_proba(X_test)
+    probs = probs[:, 1]
+
+    auc = roc_auc_score(y_test, probs)
+
+    if isplot:
+        fpr, tpr, thresholds = roc_curve(y_test, probs)
+        plot_roc_curve(fpr, tpr,auc,f_name)
+
+
+    return auc
+
+def topFeatures(features, feature_importance):
+    df = pd.DataFrame()
+    df['importance'] = feature_importance
+    df['features'] = features
+    df_topf = df.sort_values('importance',ascending=False)
+    return df_topf.iloc[0:10,:]
 
 def grid_search(model,xdata,ydata,mode,param_grid=None):
     if model == 'RF' and mode == 'RANDOMIZE':
@@ -80,7 +200,7 @@ def grid_search(model,xdata,ydata,mode,param_grid=None):
                     min_samples_leaf=int(min_samples_leaf),
                     random_state =0 )
                     predicted = cross_val_predict(model, xdata,ydata, cv=3)
-                    res_matrix[max_depth_index, n_estimator_index, min_samples_leaf_index] = metrics.accuracy_score(ydata, predicted)
+                    res_matrix[max_depth_index, n_estimator_index, min_samples_leaf_index] = accuracy_score(ydata, predicted)
                     print('\rGRID SEARCHING RF: processing set:| %s | %s | %s |' % (n_estimator_index,max_depth_index,min_samples_leaf_index))
         best_p = np.where(res_matrix == res_matrix.max())
         return res_matrix,(param_grid['n_estimators'][best_p[0][0]],param_grid['max_depth'][best_p[1][0]],param_grid['min_samples_leaf'][best_p[2][0]])
@@ -96,56 +216,7 @@ def grid_search(model,xdata,ydata,mode,param_grid=None):
                     min_samples_leaf=int(min_samples_leaf),
                     random_state =0 )
                     predicted = cross_val_predict(model, xdata,ydata, cv=3)
-                    res_matrix[max_depth_index, n_estimator_index, min_samples_leaf_index] = metrics.accuracy_score(ydata, predicted)
+                    res_matrix[max_depth_index, n_estimator_index, min_samples_leaf_index] = accuracy_score(ydata, predicted)
                     print('\rGRID SEARCHING GB: processing set:| %s | %s | %s |' % (n_estimator_index,max_depth_index,min_samples_leaf_index))
         best_p = np.where(res_matrix == res_matrix.max())
         return res_matrix,(param_grid['n_estimators'][best_p[0][0]],param_grid['max_depth'][best_p[1][0]],param_grid['min_samples_leaf'][best_p[2][0]])
-
-
-def plot_roc_curve(fpr, tpr,auc,f_name):
-    plt.plot(fpr, tpr, color='orange', label='ROC:'+str(round(auc,2)))
-    plt.plot([0, 1], [0, 1], color='darkblue', linestyle='--')
-    plt.xlabel('1 - Specificity')
-    plt.ylabel('Sensitivity')
-    plt.title('Receiver Operating Characteristic (ROC) Curve')
-    plt.legend()
-    plt.savefig(f_name+".png")
-    plt.close()
-
-def plot_senspec_curve(specificity, tpr,auc,f_name):
-
-    # ax = plt.axes(projection='3d')
-    # ax.plot3D(thresholds[1:], specificity[1:], tpr[1:], 'gray')
-    # ax.set_xlabel('thresholds')
-    # ax.set_ylabel('specificity')
-    # ax.set_zlabel('tpr')
-    # plt.savefig(f_name+"_sen_spec.png")
-    # plt.close()
-
-    plt.plot(specificity, tpr, color='orange')
-    plt.xlabel('Specificity')
-    plt.ylabel('Sensitivity')
-    plt.title('Specificity-Sensitivity Curve')
-    plt.savefig(f_name+"_sen_spec.png")
-    plt.close()
-
-
-def evaluateModel(model,X_test,y_test,isplot=None,f_name=None):
-    probs = model.predict_proba(X_test)
-    probs = probs[:, 1]
-
-    auc = metrics.roc_auc_score(y_test, probs)
-
-    if isplot:
-        fpr, tpr, thresholds = metrics.roc_curve(y_test, probs)
-        plot_roc_curve(fpr, tpr,auc,f_name)
-
-
-    return auc
-
-def topFeatures(features, feature_importance):
-    df = pd.DataFrame()
-    df['importance'] = feature_importance
-    df['features'] = features
-    df_topf = df.sort_values('importance',ascending=False)
-    return df_topf.iloc[0:10,:]
