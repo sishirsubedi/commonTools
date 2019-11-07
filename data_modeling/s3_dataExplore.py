@@ -28,8 +28,9 @@ default_models = bm.defaultModels(df_xmat,df_ymat_cat)
 for m in default_models :
     print(m[0],m[1][0],m[1][1],m[1][2],m[1][3],m[1][4],m[1][5],m[1][6],m[1][7],m[1][8],m[1][9])
 
-### categorical data modeling
-### feature selection
+### Choose a BEST model
+### Categorical data modeling
+### Feature selection
 X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cat, test_size=0.33, random_state=0)
 
 gb = GradientBoostingClassifier()
@@ -51,57 +52,44 @@ bm.evaluateModel(gb,X_test,y_test)
 
 ######### # hyperparameter tuning ######
 
-params_random = grid_search('RF',X_train,y_train,'RANDOMIZE')
+model_random = bm.grid_search('GB',df_xmat.values, df_ymat_cat,'RANDOMIZE',cv_=3,n_iter_=25)
 
-params_random_selected= {'bootstrap': [False],
-                'max_depth': [80,50],
-                'max_features': ['auto'],
-                'min_samples_leaf': [1,5],
-                'min_samples_split': [10,15],
-                'n_estimators': [1000]}
+params_random_selected= {'learning_rate': [0.03,0.05,0.07],
+                         'loss': ['deviance'],
+                         'max_depth': [8],
+                         'max_features': [3,5,8],
+                         'min_samples_leaf': [1],
+                         'min_samples_split': [3,4,5]}
 
-params_focused = grid_search('RF',X_train,y_train,'FOCUSED',params_random_selected)
-
-
-params_focused_selected = {'bootstrap': False,
- 'max_depth': [50],
- 'max_features': ['auto'],
- 'min_samples_leaf': [1],
- 'min_samples_split': [10],
- 'n_estimators': [1000]}
+model_focused = bm.grid_search('GB',df_xmat.values, df_ymat_cat,'FOCUSED',params_random_selected,cv_=10)
 
 
-mat,best_p = grid_search('RF',X_train,y_train,'EXACT',params_focused_selected)
+params_focused_selected = {'learning_rate': [0.05],
+                         'loss': ['deviance'],
+                         'max_depth': [8],
+                         'max_features': [8],
+                         'min_samples_leaf': [1],
+                         'min_samples_split': [5]}
 
-param_grid = {
-    "n_estimators": [100,150,300],
-    "max_depth": [3,6,12],
-    "min_samples_leaf": [1,10,20]}
-scoremat,best_p = grid_search('GB',X_train,y_train,cv_=3,p_grid=param_grid,verbose=True)
+model_exact = bm.grid_search('GB',df_xmat.values, df_ymat_cat,'FOCUSED',params_focused_selected,cv_=10)
 
+######## test back model
+X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cat, test_size=0.33, random_state=0)
 
+gb = bm.GradientBoostingClassifier(
+                                learning_rate= 0.05,
+                                loss= 'deviance',
+                                max_depth= 8,
+                                max_features= 8,
+                                min_samples_leaf= 1,
+                                min_samples_split= 5
+                                )
+gb.fit(X_train, y_train)
+print(bm.modelMetrics(y_test,gb.predict(X_test),gb.predict_proba(X_test)))
 
+bm.evaluateModel(gb,X_test,y_test,True,"Method_1_Final")
 
-##### for cross validation
-
-
-
-
-### other categorical models
-
-gnb = GaussianNB()
-gnb.fit(X_train, y_train)
-bm.evaluateModel(gnb,X_test,y_test,"gaussian_roc")
-
-dtree = DecisionTreeClassifier(random_state=0)
-dtree.fit(X_train, y_train)
-bm.evaluateModel(dtree,X_test,y_test,"gdtree_roc")
-
-rf = RandomForestClassifier()
-rf.fit(X_train, y_train)
-bm.evaluateModel(rf,X_test,y_test,"rf_roc")
-
-
+gb_topfeat = bm.topFeatures(df_xmat.columns,gb.feature_importances_)
 
 ####### continuous data modeling
 

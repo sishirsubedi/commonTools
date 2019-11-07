@@ -73,10 +73,8 @@ def defaultModels(df_xmat,df_ymat_cat):
             y_test  = [df_ymat_cat[i] for i in test_index]
 
             clf.fit(X_train, y_train)
-            y_predictions = clf.predict(X_test)
-            y_predictions_prob = clf.predict_proba(X_test)
 
-            metrics_cv.append(modelMetrics(y_test, y_predictions,y_predictions_prob))
+            metrics_cv.append(modelMetrics(y_test, clf.predict(X_test),clf.predict_proba(X_test)))
 
         res.append([str(clf)[:10],np.array(metrics_cv).mean(axis=0)])
 
@@ -153,7 +151,6 @@ def evaluateModel(model,X_test,y_test,isplot=None,f_name=None):
         fpr, tpr, thresholds = roc_curve(y_test, probs)
         plot_roc_curve(fpr, tpr,auc,f_name)
 
-
     return auc
 
 def topFeatures(features, feature_importance):
@@ -163,7 +160,8 @@ def topFeatures(features, feature_importance):
     df_topf = df.sort_values('importance',ascending=False)
     return df_topf.iloc[0:10,:]
 
-def grid_search(model,xdata,ydata,mode,param_grid=None):
+def grid_search(model,xdata,ydata,mode,param_grid=None,cv_=None,n_iter_=None):
+
     if model == 'RF' and mode == 'RANDOMIZE':
         n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
         max_features = ['auto', 'sqrt']
@@ -182,12 +180,12 @@ def grid_search(model,xdata,ydata,mode,param_grid=None):
         rf_random.fit(xdata, ydata)
         return rf_random.best_params_
 
+
     elif model == 'RF' and mode == 'FOCUSED':
         rf = RandomForestClassifier()
         rf_random = GridSearchCV(estimator = rf, param_grid  = param_grid, cv = 3, verbose=2, n_jobs = -1)
         rf_random.fit(xdata, ydata)
         return rf_random.best_params_
-
 
     elif model == 'RF' and mode == 'EXACT':
         res_matrix = np.zeros((len(param_grid['n_estimators']), len(param_grid['max_depth']), len(param_grid['min_samples_leaf'])))
@@ -205,18 +203,36 @@ def grid_search(model,xdata,ydata,mode,param_grid=None):
         best_p = np.where(res_matrix == res_matrix.max())
         return res_matrix,(param_grid['n_estimators'][best_p[0][0]],param_grid['max_depth'][best_p[1][0]],param_grid['min_samples_leaf'][best_p[2][0]])
 
-    elif model == 'GB' and mode == 'EXACT':
-        res_matrix = np.zeros((len(param_grid['n_estimators']), len(param_grid['max_depth']), len(param_grid['min_samples_leaf'])))
-        for n_estimator_index, n_estimator in enumerate(param_grid['n_estimators']):
-            for max_depth_index , max_depth  in enumerate(param_grid['max_depth']):
-                for min_samples_leaf_index, min_samples_leaf in enumerate(param_grid['min_samples_leaf']):
-                    model = GradientBoostingClassifier(
-                    max_depth=int(max_depth),
-                    n_estimators=int(n_estimator),
-                    min_samples_leaf=int(min_samples_leaf),
-                    random_state =0 )
-                    predicted = cross_val_predict(model, xdata,ydata, cv=3)
-                    res_matrix[max_depth_index, n_estimator_index, min_samples_leaf_index] = accuracy_score(ydata, predicted)
-                    print('\rGRID SEARCHING GB: processing set:| %s | %s | %s |' % (n_estimator_index,max_depth_index,min_samples_leaf_index))
-        best_p = np.where(res_matrix == res_matrix.max())
-        return res_matrix,(param_grid['n_estimators'][best_p[0][0]],param_grid['max_depth'][best_p[1][0]],param_grid['min_samples_leaf'][best_p[2][0]])
+    elif model == 'GB' and mode == 'RANDOMIZE':
+
+        loss = ['deviance', 'exponential']
+
+        #There is a trade-off between learning_rate and n_estimators
+        learning_rates = [0.05, 0.1, 0.25, 0.5, 0.75, 1]
+        n_estimators = [10,50,100,200]
+
+        max_depth = [2,4,8]
+        max_features = [5,10,'auto']
+
+        min_samples_split = [2, 4, 8]
+        min_samples_leaf = [1, 2, 4]
+
+        random_grid = {'loss': loss,
+                       'learning_rate': learning_rates,
+                       'max_features': max_features,
+                       'max_depth': max_depth,
+                       'min_samples_split': min_samples_split,
+                       'min_samples_leaf': min_samples_leaf,
+                       }
+
+        gb = GradientBoostingClassifier()
+        model_random = RandomizedSearchCV(estimator = gb, param_distributions = random_grid, n_iter = n_iter_, cv = cv_, verbose=2, random_state=0, n_jobs = -1)
+        model_random.fit(xdata, ydata)
+
+        return model_random
+
+    elif model == 'GB' and mode == 'FOCUSED':
+        gb = GradientBoostingClassifier()
+        model_focused = GridSearchCV(estimator = gb, param_grid  = param_grid, cv = cv_, verbose=2, n_jobs = -1)
+        model_focused.fit(xdata, ydata)
+        return model_focused
