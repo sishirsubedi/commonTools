@@ -8,14 +8,32 @@ import numpy as np
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from sklearn.model_selection import cross_val_predict
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold
-
-from sklearn.naive_bayes import GaussianNB
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+from sklearn.model_selection import StratifiedKFold
 
 from sklearn.metrics import accuracy_score, log_loss,roc_auc_score,roc_curve,confusion_matrix
+
+from sklearn.ensemble.weight_boosting import AdaBoostClassifier
+from sklearn.ensemble.bagging import BaggingClassifier
+from sklearn.mixture import GaussianMixture,BayesianGaussianMixture
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.naive_bayes import MultinomialNB,ComplementNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import ExtraTreeClassifier
+from sklearn.ensemble.forest import ExtraTreesClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.gaussian_process.gpc import GaussianProcessClassifier
+from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
+from sklearn.neighbors.classification import KNeighborsClassifier
+from sklearn.semi_supervised import LabelPropagation
+from sklearn.semi_supervised import LabelSpreading
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network.multilayer_perceptron import MLPClassifier
+from sklearn.svm import NuSVC
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.ensemble.forest import RandomForestClassifier
+from sklearn.linear_model.stochastic_gradient import SGDClassifier
+from sklearn.svm import SVC
 
 
 def correlation_info(datamatrix,th,drop,draw):
@@ -48,24 +66,59 @@ def correlation_info(datamatrix,th,drop,draw):
 
 def defaultModels(df_xmat,df_ymat_cat):
 
+    #### all available classifiers in sklearn ####
+    # classifiers = [
+    # AdaBoostClassifier(),
+    # BaggingClassifier(),
+    # BayesianGaussianMixture(),
+    # BernoulliNB(),
+    # ComplementNB(),
+    # DecisionTreeClassifier(),
+    # ExtraTreeClassifier(),
+    # ExtraTreesClassifier(),
+    # GaussianMixture(),
+    # GaussianNB(),
+    # GaussianProcessClassifier(),
+    # GradientBoostingClassifier(),
+    # KNeighborsClassifier(),
+    # LabelPropagation(),
+    # LabelSpreading(),
+    # LinearDiscriminantAnalysis(),
+    # LogisticRegression(max_iter=500),
+    # MLPClassifier(),
+    # MultinomialNB(),
+    # NuSVC(),
+    # QuadraticDiscriminantAnalysis(),
+    # RandomForestClassifier(),
+    # SGDClassifier(),
+    # SVC()]
+
+    ##### selected models  ###
     classifiers = [
-    GaussianNB(),
-    DecisionTreeClassifier(),
-    LogisticRegression(),
-    RandomForestClassifier(),
     AdaBoostClassifier(),
+    BaggingClassifier(),
+    ExtraTreesClassifier(),
+    GaussianNB(),
     GradientBoostingClassifier(),
+    # LinearDiscriminantAnalysis(),
+    LogisticRegression(max_iter=500),
+    # MLPClassifier(),
+    # QuadraticDiscriminantAnalysis(),
+    RandomForestClassifier(),
     ]
 
-    cv = KFold(n_splits=10, random_state=0, shuffle=False)
+
+    cv = StratifiedKFold(n_splits=10)
 
     res = []
 
     for clf in classifiers:
 
+        print('processing...'+ str(clf)[:10])
+
         metrics_cv =[]
 
-        for train_index, test_index in cv.split(df_xmat.values):
+        for train_index, test_index in cv.split(df_xmat.values,df_ymat_cat):
 
             X_train = df_xmat.iloc[train_index,:].values
             X_test = df_xmat.iloc[test_index,:].values
@@ -74,8 +127,12 @@ def defaultModels(df_xmat,df_ymat_cat):
 
             clf.fit(X_train, y_train)
 
-            metrics_cv.append(modelMetrics(y_test, clf.predict(X_test),clf.predict_proba(X_test)))
+            ##### use following two lines to test all models with accuracy_score
+            # print(str(clf)[:10]+"--"+str(clf.score(X_test,y_test)))
+            # res.append(str(clf)[:10]+"--"+str(clf.score(X_test,y_test)))
 
+            #### use following two lines to test selected models with extensive result metrics
+            metrics_cv.append(modelMetrics(y_test, clf.predict(X_test),clf.predict_proba(X_test)))
         res.append([str(clf)[:10],np.array(metrics_cv).mean(axis=0)])
 
     return res
@@ -84,6 +141,7 @@ def defaultModels(df_xmat,df_ymat_cat):
 def modelMetrics(y_true,y_pred,y_pred_prob):
 
     AUC = roc_auc_score(y_true, y_pred_prob[:, 1])
+
     LL = log_loss(y_true, y_pred_prob)
 
     CM = confusion_matrix(y_true, y_pred)
@@ -150,6 +208,14 @@ def evaluateModel(model,X_test,y_test,isplot=None,f_name=None):
     if isplot:
         fpr, tpr, thresholds = roc_curve(y_test, probs)
         plot_roc_curve(fpr, tpr,auc,f_name)
+
+    return auc
+
+def maximizeTPR(model,X_test,y_test,isplot=None,f_name=None):
+    probs = model.predict_proba(X_test)
+    probs = probs[:, 1]
+
+    fpr, tpr, thresholds = roc_curve(y_test, probs)
 
     return auc
 
