@@ -1,81 +1,178 @@
-import sys
-import cx_Oracle as orc
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul  6 08:25:51 2018
+@author: tmhsxs240
+"""
 import os
-import glob
+import glob ## to delete all old files
+import sys
 import pandas as pd
 import numpy as np
 import decimal
 from scipy.stats import linregress
+
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-def gettaskList(taskListID):
-    soft = pd.read_csv("/var/www/html/softConfig.ini", header = None)
-    con = orc.connect(soft.iloc[0,0].split('=')[1])
-    cur = con.cursor()
-    query =  " SELECT "
-    cur.execute(query,(taskListID,))
-    taskList = []
-    for row in cur:
-        taskList.append([x for x in row])
-    con.close()
-    if len(taskList) != 0:
-        df_taskList = pd.DataFrame(taskList)
-        df_taskList.columns = ['Tasklist_Number','LAST_NAME','FIRST_NAME','MIDDLE_INITIAL','MRN','OrderID','TEST_ID','RESULT','GROUP_TEST_ID','COLLECT_DT','RECEIVE_DATE','BARCODE']
-        df_taskList['Blank1'] = "N/A"
-        df_taskList['Blank2'] = "N/A"
-        df_taskList['Blank3'] = "N/A"
-        df_taskList['Blank4'] = "N/A"
-        df_taskList['Blank5'] = "N/A"
-        df_taskList['Blank6'] = "N/A"
-        full_name = ""
-        if df_taskList['FIRST_NAME'].values[0] != None : full_name = df_taskList['FIRST_NAME'].values[0]
-        if df_taskList['MIDDLE_INITIAL'].values[0] != None : full_name = full_name+' '+df_taskList['MIDDLE_INITIAL'].values[0]
-        if df_taskList['LAST_NAME'].values[0] != None : full_name = full_name+' '+df_taskList['LAST_NAME'].values[0]
-        df_taskList['Name'] = full_name
-        updated_columns = ['COLLECT_DT','TEST_ID','Tasklist_Number','Name','OrderID','BARCODE','Blank1','Blank2','Blank3','Blank4','Blank5','Blank6','RESULT']
-        df_taskList = df_taskList[updated_columns]
-        df_taskList.columns = ['Date','Compound','Patient#','Name','Order#','Filename','Blank1','Blank2','Blank3','Blank4','Blank5','Blank6','Calculated Amt']
-        df_taskList.drop_duplicates(subset=['Compound'], keep='first',inplace=True)
-        return (1,df_taskList)
-    else :
-        print "--------------------- Error: TaskListID '"+ taskListID + "' not found in the SoftLab database !"
-        print "--------------------- Make sure TaskListID number is correct."
-        return (0,0)
 
-def addData(df):
-    DATE = df_taskList['Date'].values[0]
-    PATIENT_NUMBER = df_taskList['Patient#'].values[0]
-    PATIENT_NAME = df_taskList['Name'].values[0]
-    ORDER_NUMBER = df_taskList['Order#'].values[0]
-    FILENAME = df_taskList['Filename'].values[0]
-    IOHT1=float(df.loc[df['Compound']=='IOHT1',:]['Calculated Amt'].values[0])
-    IOHT2=float(df.loc[df['Compound']=='IOHT2',:]['Calculated Amt'].values[0])
-    IOHT3=float(df.loc[df['Compound']=='IOHT3',:]['Calculated Amt'].values[0])
-    IX120=float(df.loc[df['Compound']=='IX120',:]['Calculated Amt'].values[0])
-    IX180=float(df.loc[df['Compound']=='IX180',:]['Calculated Amt'].values[0])
-    IX240=float(df.loc[df['Compound']=='IX240',:]['Calculated Amt'].values[0])
-    LN120 = np.log(IX120/100.0)
-    LN180 = np.log(IX180/100.0)
-    LN240 = np.log(IX240/100.0)
-    result = linregress([IOHT1,IOHT2,IOHT3], [LN120,LN180,LN240])
-    IXSLP =result.slope
-    IXINC = result.intercept
-    IXEXP = np.exp(IXINC)
-    IOCL  = 3236.0 * np.abs(IXSLP)/IXEXP
-    df.loc[df.index.max() + 1] = [DATE,"LN120",PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,FILENAME,"N/A","N/A","N/A","N/A","N/A","N/A",LN120]
-    df.loc[df.index.max() + 1] = [DATE,"LN120",PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,FILENAME,"N/A","N/A","N/A","N/A","N/A","N/A",LN120]
-    df.loc[df.index.max() + 1] = [DATE,"LN180",PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,FILENAME,"N/A","N/A","N/A","N/A","N/A","N/A",LN180]
-    df.loc[df.index.max() + 1] = [DATE,"LN240",PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,FILENAME,"N/A","N/A","N/A","N/A","N/A","N/A",LN240]
-    df.loc[df.index.max() + 1] = [DATE,"IXSLP",PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,FILENAME,"N/A","N/A","N/A","N/A","N/A","N/A",IXSLP]
-    df.loc[df.index.max() + 1] = [DATE,"IXINC",PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,FILENAME,"N/A","N/A","N/A","N/A","N/A","N/A",IXINC]
-    df.loc[df.index.max() + 1] = [DATE,"IXEXP",PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,FILENAME,"N/A","N/A","N/A","N/A","N/A","N/A",IXEXP]
-    df.loc[df.index.max() + 1] = [DATE,"IOCL",PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,FILENAME,"N/A","N/A","N/A","N/A","N/A","N/A",IOCL]
-    return df
+if len(sys.argv) != 2:
+    print ( "\n-----------------------------------------------\n")
+    print("\nProgram ERROR: Did not find date !")
+    print ( "\n-----------------------------------------------\n")
+else:
+    date= sys.argv[1]
+    path="/home/scratch/iohexol/"
 
-def plotReport(df):
+    # remove all old files
+    files = glob.glob(path + "report/*")
+    for f in files:
+        os.remove(f)
+
+    #check if file exists
+    if not os.path.exists(path +"tracefinder/Iohexol_tracefinder_%s.csv"%(date)):
+            print ( "\n-----------------------------------------------\n")
+            print("File not found Iohexol_tracefinder_%s.csv"%(date))
+            print("\nProgram ERROR. ")
+            print ( "\n-----------------------------------------------\n")
+            exit()
+    if not os.path.exists(path +"tasklist/Iohexol_tasklist_%s.txt" %(date)):
+            print ( "\n-----------------------------------------------\n")
+            print("File not found Iohexol_tasklist_%s.txt" %(date))
+            print("\nProgram ERROR. ")
+            print ( "\n-----------------------------------------------\n")
+            exit()
+    trace_finder = pd.read_csv(path +"tracefinder/Iohexol_tracefinder_%s.csv"%(date))
+    trace_finder_iohexol = trace_finder.loc[(trace_finder['Compound'] == 'iohexol')]
+    trace_finder_iohexol_data = trace_finder_iohexol.loc[trace_finder_iohexol['Filename'].str.contains("100",regex=True),:]
+    trace_finder_columns= ['Compound', 'Filename', 'Calculated Amt']
+    trace_finder_iohexol_data_filt = trace_finder_iohexol_data.loc[:,trace_finder_columns]
+
+
+    task_list = path +"tasklist/Iohexol_tasklist_%s.txt" %(date)
+    iohs = ['IOHT1','IOHT2','IOHT3']
+    task=[]
+    with open(task_list) as f:
+        content = f.readlines()
+        for line in content:
+            temp=[]
+            line.rstrip().split('\t')
+            newline = line.split()
+            if len(newline)>1:
+                if newline[0].isnumeric():
+                    temp.append(newline[0])
+                    temp.append(newline[1])
+                    temp.append(newline[3])
+                elif len(newline)>5:
+                    if 'Age' in newline[2]:
+                        name = newline[1]+" " + newline[0]
+                        temp.append(name)
+                    elif 'Age' in newline[3]:
+                        name = newline[2]+" " + newline[1]+" " + newline[0]
+                        temp.append(name)
+                elif newline[0] == 'DIR':
+                    temp.append(newline[0])
+                    temp.append(newline[1])
+                elif newline[0] in iohs:
+                    temp.append(newline[0])
+                    temp.append(newline[4])
+                elif newline[0] == 'BSA':
+                    temp.append(newline[0])
+                    temp.append(newline[2])
+            if len(temp)>0:
+                task.append(temp)
+
+
+    # filter tasklist file to keep only required entries
+
+    tasklist =[]
+    for i  in range(len(task)):
+        if i > len(task)-11:
+            break
+        if task[i][0].isnumeric():
+            temp =[]
+            temp.append(task[i][0])
+            temp.append(task[i][1])
+            temp.append(task[i][2])
+            temp.append(task[i+1][0])
+            uniq_ids = np.unique([task[i+2][1],task[i+3][1],task[i+4][1],task[i+5][1],task[i+6][1]])
+
+            temp.append(uniq_ids[0])
+            temp.append(uniq_ids[1])
+            temp.append(uniq_ids[2])
+
+            temp.append(task[i+7][1])
+
+            temp.append(task[i+8][1])
+            temp.append(task[i+9][1])
+            temp.append(task[i+10][1])
+
+            tasklist.append(temp)
+
+    ### generate report
+    entries =[]
+    for task in tasklist:
+        PATIENT_NUMBER=task[0]
+        ORDER_NUMBER = task[1]
+        DATE = task[2]
+        PATIENT_NAME=task[3]
+        id1 = task[4][3:]
+        id2 = task[5][3:]
+        id3 = task[6][3:]
+
+        IOHT1=float(task[7])
+        IOHT2=float(task[8])
+        IOHT3=float(task[9])
+
+        BSA=float(task[10])
+
+        IX120=float(trace_finder_iohexol_data_filt.loc[trace_finder_iohexol_data_filt.Filename==id1,:]['Calculated Amt'].values[0])
+        IX180=float(trace_finder_iohexol_data_filt.loc[trace_finder_iohexol_data_filt.Filename==id2,:]['Calculated Amt'].values[0])
+        IX240=float(trace_finder_iohexol_data_filt.loc[trace_finder_iohexol_data_filt.Filename==id3,:]['Calculated Amt'].values[0])
+
+
+        LN120 = np.log(IX120/100.0)
+        LN180 = np.log(IX180/100.0)
+        LN240 = np.log(IX240/100.0)
+
+        result = linregress([IOHT1,IOHT2,IOHT3], [LN120,LN180,LN240])
+        IXSLP =result.slope
+        IXINC = result.intercept
+        IXR2 = result.rvalue **2
+
+        IXEXP = np.exp(IXINC)
+        IOCL  = 3236.0 * np.abs(IXSLP)/IXEXP
+
+        ICGFR = 0.990778*IOCL - 0.001218*np.power(IOCL,2)
+        NGFR = ICGFR/BSA*1.73
+
+        entries.append([DATE,'IOHT1',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IOHT1])
+        entries.append([DATE,'IOHT2',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IOHT2])
+        entries.append([DATE,'IOHT3',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IOHT3])
+        entries.append([DATE,'IX120',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id1,'N/A','N/A','N/A','N/A','N/A','N/A',IX120])
+        entries.append([DATE,'IX180',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id2,'N/A','N/A','N/A','N/A','N/A','N/A',IX180])
+        entries.append([DATE,'IX240',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',IX240])
+        entries.append([DATE,'LN120',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',LN120])
+        entries.append([DATE,'LN180',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',LN180])
+        entries.append([DATE,'LN240',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',LN240])
+        entries.append([DATE,'IXSLP',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',IXSLP])
+        entries.append([DATE,'IXINC',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',IXINC])
+        entries.append([DATE,'IXR2',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',IXR2])
+        entries.append([DATE,'IXEXP',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',IXEXP])
+        entries.append([DATE,'IOCL',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',IOCL])
+        entries.append([DATE,'ICGFR',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',ICGFR])
+        entries.append([DATE,'BSA',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',decimal.Decimal(task[10])])
+        entries.append([DATE,'NGFR',PATIENT_NUMBER,PATIENT_NAME,ORDER_NUMBER,id3,'N/A','N/A','N/A','N/A','N/A','N/A',NGFR])
+
+
+        entries_df = pd.DataFrame(entries)
+        entries_df.columns = ['Date','Compound', 'Patient#',"Name",'Order#','Filename','Blank1','Blank2','Blank3','Blank4','Blank5','Blank6','Calculated Amt']
+        entries_df.to_csv(path+"report/Iohexol_report_%s.csv" %(date),index=False)
+
+        orders = entries_df["Order#"].unique()
+
     with PdfPages(path +"report/Iohexol_report_%s.pdf" %(date)) as pdf:
         for order in orders:
             data_mat = entries_df.loc[entries_df["Order#"]==order,:]
@@ -104,19 +201,12 @@ def plotReport(df):
             pdf.savefig()
             plt.close()
 
+    os.remove(path +"tracefinder/Iohexol_tracefinder_%s.csv"%(date));
+    os.remove(path +"tasklist/Iohexol_tasklist_%s.txt" %(date));
 
-# def gettraceFinder(trace_finder_file):
-#     trace_finder = pd.read_csv(trace_finder_file)
-#     trace_finder_iohexol = trace_finder.loc[(trace_finder['Compound'] == 'iohexol')]
-#     trace_finder_iohexol_data = trace_finder_iohexol.loc[trace_finder_iohexol['Filename'].str.isdigit(),:]
-#     trace_finder_columns= ['Compound', 'Filename', 'Calculated Amt']
-#     return trace_finder_iohexol_data.loc[:,trace_finder_columns]
-
-# taskListID = sys.argv[1]
-taskListID = '43364'
-taskList_Return = gettaskList(taskListID)
-
-if taskList_Return[0] == 0:
-    exit()
-else:
-    df_result = addData(taskList_Return[1])
+    print ( "\n-----------------------------------------------\n")
+    print("Report generated as ")
+    print("Iohexol_report_%s.csv" %(date))
+    print("Iohexol_graph_%s.pdf" %(date))
+    print("\n Please download the report !")
+    print ( "\n-----------------------------------------------\n")
