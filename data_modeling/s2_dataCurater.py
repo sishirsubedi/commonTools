@@ -18,13 +18,13 @@ def getAcceptableRows(df_rowcount,row_missing_tol):
 df = pd.read_csv(sys.argv[1],low_memory=False)
 
 ## remove columns with high missing data
-col_missing_tol=0.40
+col_missing_tol=0.33
 passed_cols = getHQFeatures(pd.DataFrame(df.isnull().sum()),df.shape[0],col_missing_tol)
 df_hqf = df[passed_cols]
 
-row_missing_tol=10 ## at least data for 10 features present
-passed_rows = getAcceptableRows(pd.DataFrame(df_hqf.isnull().sum(axis=1)),row_missing_tol)
-df_hqf = df_hqf.iloc[passed_rows,:]
+# row_missing_tol=20 ## at least data for 10 features present
+# passed_rows = getAcceptableRows(pd.DataFrame(df_hqf.isnull().sum(axis=1)),row_missing_tol)
+# df_hqf = df_hqf.iloc[passed_rows,:]
 
 ##remove any rows with no PTH values
 df_hqf = df_hqf[df_hqf['PTH'].isnull()==False]
@@ -33,10 +33,10 @@ df_hqf = df_hqf[df_hqf['PTH'].isnull()==False]
 df_hqf = df_hqf[df_hqf['max_CA']>=10.4]
 
 ##impute categorical race with the most frequent race
-df_hqf.ix[df_hqf.RACE.isnull(),'RACE']='C'
+df_hqf.ix[df_hqf.RACE.isnull(),'RACE']='C'  ### majority rule for <1% missing data, 
 
 ### fill all categorical values with missing data with mean
-df_hqf.fillna(df_hqf.mean(),inplace=True)
+# df_hqf.fillna(df_hqf.mean(),inplace=True)  ### this is done by R
 
 
 ## encode categorical values
@@ -50,4 +50,4 @@ df_hqf.drop(['SEX','RACE'],axis=1,inplace=True)
 # feature_columns = [x for x in df_hqf.columns if x not in ['MRN','PTH']]
 # cor_feat = bm.correlation_info(df_hqf[feature_columns],0.8,1,0)
 # df_hqf = df_hqf[df_hqf.columns.difference(cor_feat)]
-df_hqf.to_csv("d5_mean_impute_final_datamat.csv",index=False)
+df_hqf.to_csv("d2_before_impute_final_datamat.csv",index=False)

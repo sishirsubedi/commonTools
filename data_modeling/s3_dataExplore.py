@@ -1,108 +1,41 @@
 import sys
 import pandas as pd
 import basemodel as bm
-from sklearn.model_selection import train_test_split
 
-df = pd.read_csv("d5_after_impute_final_datamat.csv",low_memory=False)
+######## generate table describing main features ---
+df = pd.read_csv("d3_after_impute_final_datamat.csv",low_memory=False)
 
 df_xmat = df[[x for x in df.columns if x not in ['PTH','MRN','max_PTH','min_PTH','last_PTH']]]
+main_features =  [ x for x in df_xmat.columns if '_' not in x ]
+df_xmat = df_xmat[main_features]
 
-### continuous predictions
-df_ymat_cont = df[['PTH']]
+info = pd.DataFrame()
+info ['testResultCode'] = main_features
 
-###categorical predictions
-df_ymat_cat  = []
-for x in df_ymat_cont.values:
-    #if ca < ___(8?) then 0
-    #else if pth
-    if x < 66:
-        df_ymat_cat.append(0)
-    else:
-        df_ymat_cat.append(1)
+df_testCodes = pd.read_csv("TestCodes.csv")
+df_testCodes = df_testCodes[ ['testResultCode','testResultName']]
+join = pd.merge(info,df_testCodes,on='testResultCode',how='left',indicator=True)
+join.drop_duplicates(['testResultCode','testResultName'],keep='first',inplace=True)
+info['test code'] = join['testResultCode'].values
+info['test name'] = join['testResultName'].values
+info['median'] = [round(x,2) for x in df_xmat.median()]
+info['qr_25'] = [round(x,2) for x in df_xmat.quantile(.25)]
+info['qr_75'] = [round(x,2) for x in df_xmat.quantile(.75)]
+info['qr'] = [str(x)+'-'+str(y) for x,y in zip(info['qr_25'].values,info['qr_75'].values)]
+info['Median (IQR)'] = [str(x)+' ('+str(y)+')' for x,y in zip(info['median'].values,info['qr'].values)]
 
-
-
-#### default model survey
-
-default_models = bm.defaultModels(df_xmat,df_ymat_cat)
-for m in default_models :
-    print(m[0],m[1][0],m[1][1],m[1][2],m[1][3],m[1][4],m[1][5],m[1][6],m[1][7],m[1][8],m[1][9])
-
-### Choose a BEST model
-### Feature selection
-X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cat, test_size=0.33, random_state=0)
-
-gb = bm.GradientBoostingClassifier()
-gb.fit(X_train, y_train)
-bm.evaluateModel(gb,X_test,y_test)
-print(bm.modelMetrics(y_test,gb.predict(X_test),gb.predict_proba(X_test)))
-
-
-### test prediction power of top selected features
-gb_topfeat = bm.topFeatures(df_xmat.columns,gb.feature_importances_)
-df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'].values]]
-# df_xmat_gbf = df[[x for x in df_xmat.columns if x in gb_topfeat['features'][0:3].values]]
-X_train, X_test, y_train, y_test = train_test_split( df_xmat_gbf.values, df_ymat_cat, test_size=0.33, random_state=0)
-gb = bm.GradientBoostingClassifier()
-gb.fit(X_train, y_train)
-print(bm.modelMetrics(y_test,gb.predict(X_test),gb.predict_proba(X_test)))
+df_missing = pd.read_csv("d2_before_impute_final_datamat.csv",low_memory=False)
+info['Missing %'] = [int(round((x/df_missing.shape[0]),2)*100) for x in df_missing[main_features].isnull().sum()]
+info = info[['test code','test name','Missing %','Median (IQR)']]
+info.to_csv("paper_data_feature_description.csv",index=False)
+#########################################################
 
 
 
-######### # hyperparameter tuning ######
+#############correlation plot 
+df = pd.read_csv("d3_after_impute_final_datamat.csv",low_memory=False)
 
-model_random = bm.grid_search('GB',df_xmat.values, df_ymat_cat,'RANDOMIZE',cv_=3,n_iter_=25)
-
-params_random_selected= {'learning_rate': [0.08,0.1,0.15],
-                         'loss': ['exponential'],
-                         'max_depth': [4],
-                         'max_features': [8,10,12],
-                         'min_samples_leaf': [1],
-                         'min_samples_split': [2,4]}
-
-model_focused = bm.grid_search('GB',df_xmat.values, df_ymat_cat,'FOCUSED',params_random_selected,cv_=10)
-
-
-params_focused_selected = {'learning_rate': [0.15],
-                         'loss': ['exponential'],
-                         'max_depth': [4],
-                         'max_features': [10],
-                         'min_samples_leaf': [1],
-                         'min_samples_split': [2]}
-
-model_exact = bm.grid_search('GB',df_xmat.values, df_ymat_cat,'FOCUSED',params_focused_selected,cv_=10)
-
-######## test back model
-X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cat, test_size=0.33, random_state=0)
-
-# gb = bm.GradientBoostingClassifier(
-#                                 learning_rate= 0.08,
-#                                 loss= 'exponential',
-#                                 max_depth= 8,
-#                                 max_features= 8,
-#                                 min_samples_leaf= 1,
-#                                 min_samples_split= 3
-#                                 )
-gb = bm.GradientBoostingClassifier()
-
-gb.fit(X_train, y_train)
-print(bm.modelMetrics(y_test,gb.predict(X_test),gb.predict_proba(X_test)))
-
-bm.evaluateModel(gb,X_test,y_test,True,"Method_1_Final")
-
-gb_topfeat = bm.topFeatures(df_xmat.columns,gb.feature_importances_)
-
-####### continuous data modeling
-
-## with scaling
-X_scaled = preprocessing.scale(df_xmat)
-X_train, X_test, y_train, y_test = train_test_split( X_scaled, df_ymat_cont.values, test_size=0.4, random_state=0)
-
-## without scaling
-X_train, X_test, y_train, y_test = train_test_split( df_xmat.values, df_ymat_cont.values, test_size=0.4, random_state=0)
-
-reg = bm.LinearRegression().fit(X_train, y_train)
-reg.score(X_test, y_test)
-
-svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,coef0=1)
-svr_poly.fit(X_train,y_train)
+df_xmat = df[[x for x in df.columns if x not in ['MRN','max_PTH','min_PTH','last_PTH']]]
+main_features =  [ x for x in df_xmat.columns if '_' not in x ]
+df_xmat = df_xmat[main_features]
+bm.correlation_info(df_xmat,0.9,0,1)

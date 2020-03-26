@@ -10,6 +10,8 @@ from sklearn.model_selection import cross_val_predict
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 
+from sklearn.feature_selection import RFECV
+
 from sklearn.metrics import accuracy_score, log_loss,roc_auc_score,roc_curve,confusion_matrix
 
 from sklearn.ensemble.weight_boosting import AdaBoostClassifier
@@ -40,7 +42,7 @@ def correlation_info(datamatrix,th,drop,draw):
     print("correlation_info running ... ")
     df_all_data = datamatrix
 
-    corr_matrix = df_all_data.iloc[:,0:(df_all_data.shape[1]-1)].corr()
+    corr_matrix = df_all_data.iloc[:,0:(df_all_data.shape[1])].corr()
     if draw:
         plt.figure(figsize=(10, 10))
         sns.heatmap(corr_matrix,xticklabels=corr_matrix.columns,yticklabels=corr_matrix.columns)
@@ -66,44 +68,17 @@ def correlation_info(datamatrix,th,drop,draw):
 
 def defaultModels(df_xmat,df_ymat_cat):
 
-    #### all available classifiers in sklearn ####
-    # classifiers = [
-    # AdaBoostClassifier(),
-    # BaggingClassifier(),
-    # BayesianGaussianMixture(),
-    # BernoulliNB(),
-    # ComplementNB(),
-    # DecisionTreeClassifier(),
-    # ExtraTreeClassifier(),
-    # ExtraTreesClassifier(),
-    # GaussianMixture(),
-    # GaussianNB(),
-    # GaussianProcessClassifier(),
-    # GradientBoostingClassifier(),
-    # KNeighborsClassifier(),
-    # LabelPropagation(),
-    # LabelSpreading(),
-    # LinearDiscriminantAnalysis(),
-    # LogisticRegression(max_iter=500),
-    # MLPClassifier(),
-    # MultinomialNB(),
-    # NuSVC(),
-    # QuadraticDiscriminantAnalysis(),
-    # RandomForestClassifier(),
-    # SGDClassifier(),
-    # SVC()]
-
-    ##### selected models  ###
+    #### representitive common classifiers in sklearn ####
     classifiers = [
+    GaussianNB(),
+    LogisticRegression(max_iter=500),
+    DecisionTreeClassifier(),
+    KNeighborsClassifier(),
+    SVC(kernel='rbf'),
     AdaBoostClassifier(),
     BaggingClassifier(),
     ExtraTreesClassifier(),
-    GaussianNB(),
     GradientBoostingClassifier(),
-    # LinearDiscriminantAnalysis(),
-    LogisticRegression(max_iter=500),
-    # MLPClassifier(),
-    # QuadraticDiscriminantAnalysis(),
     RandomForestClassifier(),
     ]
 
@@ -127,13 +102,9 @@ def defaultModels(df_xmat,df_ymat_cat):
 
             clf.fit(X_train, y_train)
 
-            ##### use following two lines to test all models with accuracy_score
-            # print(str(clf)[:10]+"--"+str(clf.score(X_test,y_test)))
-            # res.append(str(clf)[:10]+"--"+str(clf.score(X_test,y_test)))
+            metrics_cv.append(clf.score(X_test,y_test))
 
-            #### use following two lines to test selected models with extensive result metrics
-            metrics_cv.append(modelMetrics(y_test, clf.predict(X_test),clf.predict_proba(X_test)))
-        res.append([str(clf)[:10],np.array(metrics_cv).mean(axis=0)])
+        res.append([str(clf)[:10],np.array(metrics_cv).mean(axis=0),np.array(metrics_cv).std(axis=0)])
 
     return res
 
@@ -214,9 +185,7 @@ def evaluateModel(model,X_test,y_test,isplot=None,f_name=None):
 def maximizeTPR(model,X_test,y_test,isplot=None,f_name=None):
     probs = model.predict_proba(X_test)
     probs = probs[:, 1]
-
     fpr, tpr, thresholds = roc_curve(y_test, probs)
-
     return auc
 
 def topFeatures(features, feature_importance):
@@ -224,7 +193,7 @@ def topFeatures(features, feature_importance):
     df['importance'] = feature_importance
     df['features'] = features
     df_topf = df.sort_values('importance',ascending=False)
-    return df_topf.iloc[0:10,:]
+    return df_topf.iloc[0:50,:]
 
 def grid_search(model,xdata,ydata,mode,param_grid=None,cv_=None,n_iter_=None):
 
@@ -302,3 +271,41 @@ def grid_search(model,xdata,ydata,mode,param_grid=None,cv_=None,n_iter_=None):
         model_focused = GridSearchCV(estimator = gb, param_grid  = param_grid, cv = cv_, verbose=2, n_jobs = -1)
         model_focused.fit(xdata, ydata)
         return model_focused
+
+
+def get_feature_ranking(X_train,y_train):
+    print ("feature ranking running....-> LogisticRegression")
+    model1 = LogisticRegression(max_iter=500)
+    rfe = RFECV(estimator=model1, step=1, cv=StratifiedKFold(2),scoring='accuracy')
+    rfe = rfe.fit(X_train,y_train )
+    logr_ranking =[]
+    for x,d in zip(rfe.ranking_,X_train.columns):
+        logr_ranking.append([d,x])
+    logr_ranking = pd.DataFrame(logr_ranking,columns=['features1','logr'])
+    logr_ranking.sort_values('features1',inplace=True)
+
+    print ("feature ranking running....-> GradientBoostingClassifier")
+    model2 = GradientBoostingClassifier()
+    rfe = RFECV(estimator=model2, step=1, cv=StratifiedKFold(2),scoring='accuracy')
+    rfe = rfe.fit(X_train,y_train )
+    gboost_ranking =[]
+    for x,d in zip(rfe.ranking_,X_train.columns):
+        gboost_ranking.append([d,x])
+    gboost_ranking = pd.DataFrame(gboost_ranking,columns=['features2','gboost'])
+    gboost_ranking.sort_values('features2',inplace=True)
+
+    print ("feature ranking running....-> AdaBoostClassifier")
+    model3 = AdaBoostClassifier()
+    rfe = RFECV(estimator=model3, step=1, cv=StratifiedKFold(2),scoring='accuracy')
+    rfe = rfe.fit(X_train,y_train )
+    adaboost_ranking =[]
+    for x,d in zip(rfe.ranking_,X_train.columns):
+        adaboost_ranking.append([d,x])
+    adaboost_ranking = pd.DataFrame(adaboost_ranking,columns=['features3','adaboost'])
+    adaboost_ranking.sort_values('features3',inplace=True)
+
+    feature_sum = logr_ranking['logr']+ gboost_ranking['gboost']+adaboost_ranking['adaboost']
+    df_ranked =  pd.concat([logr_ranking['features1'],feature_sum],axis=1)
+    df_ranked.sort_values(0,inplace=True)
+
+    return df_ranked

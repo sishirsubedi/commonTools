@@ -58,7 +58,10 @@ def extractFeature(infile):
     df['testResult'] = df['testResult'].astype(float)
 
     ## get average of testResults
-    patient_features = df.groupby(['testResultCode'])['testResult'].mean().reset_index()
+    mean_patient_features = df.groupby(['testResultCode'])['testResult'].mean().reset_index()
+    max_patient_features = df.groupby(['testResultCode'])['testResult'].max().add_prefix('max_').reset_index()
+    min_patient_features = df.groupby(['testResultCode'])['testResult'].min().add_prefix('min_').reset_index()
+    last_patient_features = df.sort_values('collectDate').groupby(['testResultCode']).tail(1).reset_index()
 
     final_features=[]
     final_features.append(['MRN',pth_row['mrn']])
@@ -66,8 +69,14 @@ def extractFeature(infile):
     final_features.append(['SEX',pth_row['sex']])
     final_features.append(['RACE',pth_row['race']])
 
-    for indx,row in patient_features.iterrows():
+    for indx,row in mean_patient_features.iterrows():
         final_features.append([row['testResultCode'],row['testResult']])
+    for indx,row in max_patient_features.iterrows():
+        final_features.append([row['testResultCode'],row['testResult']])
+    for indx,row in min_patient_features.iterrows():
+        final_features.append([row['testResultCode'],row['testResult']])
+    for indx,row in last_patient_features.iterrows():
+        final_features.append(['last_'+row['testResultCode'],row['testResult']])
 
     df_final_features= pd.DataFrame(final_features)
     df_final_features.columns=['Features','Values']
@@ -122,4 +131,4 @@ with zipfile.ZipFile(sys.argv[1], "r") as f:
            except:
                sys.stderr.write("Sample failed %s\n" % name); continue
 
-df_datamatrix.to_csv("Result_DataMatrix.csv",index=False)
+df_datamatrix.to_csv("d1_Result_DataMatrix.csv",index=False)
